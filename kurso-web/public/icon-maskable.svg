@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Kurso">
+  <defs>
+    <linearGradient id="km" x1="64" y1="32" x2="448" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4A90F5"/>
+      <stop offset="1" stop-color="#2E7DF2"/>
+    </linearGradient>
+  </defs>
+  <!-- full-bleed background so the launcher mask never reveals transparency -->
+  <rect width="512" height="512" fill="url(#km)"/>
+  <!-- mark kept inside the 80% maskable safe zone -->
+  <g transform="translate(147 147) scale(9.083)" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 4 L7 20 M7 20 L4 17 M7 20 L10 17 M17 20 L17 4 M17 4 L14 7 M17 4 L20 7"/>
+  </g>
+</svg>

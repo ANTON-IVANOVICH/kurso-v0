@@ -1,0 +1,20 @@
+{
+  "name": "Kurso — агрегатор курсов обменников",
+  "short_name": "Kurso",
+  "description": "Лучший курс обмена криптовалюты за секунды: сравнение курсов, алерты, карта пунктов.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0A0B0D",
+  "theme_color": "#0A0B0D",
+  "lang": "ru",
+  "categories": ["finance", "utilities"],
+  "icons": [
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any" },
+    { "src": "/pwa-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "/pwa-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    { "src": "/pwa-maskable-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ]
+}
