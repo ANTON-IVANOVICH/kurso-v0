@@ -70,6 +70,13 @@ type Exchanger struct {
 	OnSinceYear     int      // year the exchanger was added (created_at)
 }
 
+// RateHistoryPoint is one time-bucket's best (highest) rate for a direction,
+// used to draw the sparkline behind the price-alert builder.
+type RateHistoryPoint struct {
+	At   time.Time
+	Rate string // decimal string
+}
+
 // RateRow is one exchanger's current rate for a direction — the denormalised
 // shape the public rates API and SSE stream return.
 type RateRow struct {

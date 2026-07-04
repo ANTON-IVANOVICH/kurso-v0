@@ -68,6 +68,7 @@ func NewRouter(d Deps) http.Handler {
 			r.Post("/exchangers/{slug}/reviews", a.createReview)
 			r.Post("/reviews/{id}/report", a.reportReview)
 			r.Get("/rates/{direction}", a.getRates)
+			r.Get("/rates/{direction}/history", a.getRateHistory)
 
 			// End-user auth. session is a non-rotating check the Nuxt SSR server
 			// calls (forwarding the refresh cookie) to resolve the current user.

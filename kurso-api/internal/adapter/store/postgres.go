@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/domain"
 	"github.com/jackc/pgx/v5"
@@ -167,6 +168,36 @@ func (s *Store) RatesByDirection(ctx context.Context, directionID string) ([]dom
 			return nil, fmt.Errorf("scan rate: %w", err)
 		}
 		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
+// RateHistoryByDirection returns the best (highest) rate per time bucket for a
+// direction over the given window, oldest first — the sparkline behind the
+// alert builder. bucketSeconds sizes each point so the series stays bounded.
+func (s *Store) RateHistoryByDirection(ctx context.Context, directionID string, since time.Time, bucketSeconds int) ([]domain.RateHistoryPoint, error) {
+	if bucketSeconds < 1 {
+		bucketSeconds = 3600
+	}
+	rows, err := s.db.Query(ctx, `
+		SELECT to_timestamp(floor(extract(epoch FROM recorded_at) / $3) * $3) AS bucket,
+		       max(rate)::text
+		FROM rates_history
+		WHERE direction_id = $1 AND recorded_at >= $2
+		GROUP BY bucket
+		ORDER BY bucket`, directionID, since, bucketSeconds)
+	if err != nil {
+		return nil, fmt.Errorf("query rate history: %w", err)
+	}
+	defer rows.Close()
+
+	var out []domain.RateHistoryPoint
+	for rows.Next() {
+		var p domain.RateHistoryPoint
+		if err := rows.Scan(&p.At, &p.Rate); err != nil {
+			return nil, fmt.Errorf("scan rate history: %w", err)
+		}
+		out = append(out, p)
 	}
 	return out, rows.Err()
 }
