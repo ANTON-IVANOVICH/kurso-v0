@@ -14,4 +14,15 @@ export default defineConfigWithVueTs(
   pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,
   prettierConfig,
+  {
+    name: 'kurso-admin/rules',
+    rules: {
+      // Allow intentionally-unused args/vars when prefixed with `_`
+      // (e.g. contract-ready function signatures ahead of the backend).
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' },
+      ],
+    },
+  },
 )
