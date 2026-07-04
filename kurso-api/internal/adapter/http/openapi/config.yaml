@@ -1,0 +1,9 @@
+# oapi-codegen configuration for the Kurso API.
+# Run via `make generate` (from repo root) or:
+#   cd kurso-api && go tool oapi-codegen -config internal/adapter/http/openapi/config.yaml ../api/openapi.yaml
+package: openapi
+output: internal/adapter/http/openapi/types.gen.go
+generate:
+  models: true
+output-options:
+  skip-prune: true

@@ -1,0 +1,253 @@
+openapi: 3.0.3
+
+info:
+  title: Kurso API
+  description: |
+    Публичный, админский и партнёрский API платформы Kurso.
+    Этот файл — единый источник правды для контракта между `kurso-api` (Go)
+    и фронтендами (`kurso-web`, `kurso-admin`, `kurso-partner`).
+    На этапе 0 описаны только базовые типы и health-check.
+  version: 0.1.0
+  contact:
+    name: Kurso
+    url: https://kurso.io
+
+servers:
+  - url: http://localhost:8080
+    description: Локальная разработка
+  - url: https://api.kurso.io
+    description: Production
+
+tags:
+  - name: system
+    description: Служебные эндпоинты (health, readiness)
+  - name: public
+    description: Публичный API (kurso-web)
+
+paths:
+  /healthz:
+    get:
+      tags: [system]
+      summary: Liveness probe
+      description: Проверка того, что процесс жив. Не проверяет зависимости.
+      operationId: getHealth
+      responses:
+        '200':
+          description: Сервис жив
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+
+  /readyz:
+    get:
+      tags: [system]
+      summary: Readiness probe
+      description: Проверка готовности принимать трафик (БД, Redis доступны).
+      operationId: getReadiness
+      responses:
+        '200':
+          description: Сервис готов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Readiness'
+        '503':
+          description: Сервис не готов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Readiness'
+
+  /api/v1/currencies:
+    get:
+      tags: [public]
+      summary: Список валют
+      description: Справочник валют. Полноценно реализуется на этапе 1.
+      operationId: listCurrencies
+      responses:
+        '200':
+          description: Список валют
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Currency'
+        default:
+          $ref: '#/components/responses/Error'
+
+components:
+  schemas:
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+          example: ok
+
+    Readiness:
+      type: object
+      required: [status, checks]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            postgres: ok
+            redis: ok
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Машиночитаемый код ошибки
+          example: not_found
+        message:
+          type: string
+          description: Человекочитаемое сообщение
+        details:
+          type: object
+          additionalProperties: true
+          description: Дополнительный контекст ошибки
+
+    Pagination:
+      type: object
+      required: [total, limit, offset]
+      properties:
+        total:
+          type: integer
+          format: int64
+          minimum: 0
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 200
+        offset:
+          type: integer
+          minimum: 0
+
+    CurrencyKind:
+      type: string
+      description: Тип валюты
+      enum: [crypto, fiat, cash]
+
+    Currency:
+      type: object
+      required: [id, code, name, kind]
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+          description: Тикер/код валюты
+          example: BTC
+        name:
+          type: string
+          example: Bitcoin
+        kind:
+          $ref: '#/components/schemas/CurrencyKind'
+        network:
+          type: string
+          nullable: true
+          description: Сеть для крипты (TRC20, ERC20 и т.п.)
+          example: TRC20
+        iconUrl:
+          type: string
+          format: uri
+          nullable: true
+
+    Direction:
+      type: object
+      required: [id, fromCurrencyId, toCurrencyId, slug]
+      properties:
+        id:
+          type: string
+          format: uuid
+        fromCurrencyId:
+          type: string
+          format: uuid
+        toCurrencyId:
+          type: string
+          format: uuid
+        slug:
+          type: string
+          example: btc-to-usdt-trc20
+        isPopular:
+          type: boolean
+          default: false
+
+    ExchangerStatus:
+      type: string
+      enum: [active, paused, banned]
+
+    Exchanger:
+      type: object
+      required: [id, slug, name, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+          example: fastchange
+        name:
+          type: string
+          example: FastChange
+        status:
+          $ref: '#/components/schemas/ExchangerStatus'
+        ratingAvg:
+          type: number
+          format: float
+          nullable: true
+          minimum: 0
+          maximum: 5
+        websiteUrl:
+          type: string
+          format: uri
+          nullable: true
+
+    Rate:
+      type: object
+      required: [exchangerId, directionId, rate, updatedAt]
+      properties:
+        exchangerId:
+          type: string
+          format: uuid
+        directionId:
+          type: string
+          format: uuid
+        rate:
+          type: string
+          description: Курс в виде decimal-строки (чтобы не терять точность)
+          example: '0.0000234'
+        reserve:
+          type: string
+          nullable: true
+          description: Резерв в валюте назначения (decimal-строка)
+        minAmount:
+          type: string
+          nullable: true
+        maxAmount:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+
+  responses:
+    Error:
+      description: Ошибка
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

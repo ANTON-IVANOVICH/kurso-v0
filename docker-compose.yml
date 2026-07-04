@@ -1,0 +1,93 @@
+name: kurso
+
+# Полный стек в Docker — это ПРОД-развёртывание (self-host / прод-паритет).
+# Для локальной разработки он НЕ нужен: dev использует твои хостовые Postgres и
+# Redis + `make migrate` + `make run` + `pnpm dev`. Postgres/Redis здесь можно
+# заменить на управляемые сервисы, переопределив DATABASE_URL / REDIS_URL у `api`.
+#   make stack-up   — собрать и поднять весь стек
+#   make stack-down — остановить
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: kurso
+      POSTGRES_PASSWORD: kurso
+      POSTGRES_DB: kurso
+    ports:
+      # Override POSTGRES_PORT if you already run Postgres on 5432 locally.
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kurso -d kurso"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Go-монолит (public / admin / partner API).
+  api:
+    build:
+      context: ./kurso-api
+      dockerfile: Dockerfile
+    environment:
+      KURSO_ENV: dev
+      HTTP_PORT: "8080"
+      DATABASE_URL: postgres://kurso:kurso@postgres:5432/kurso?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      LOG_LEVEL: info
+      LOG_FORMAT: json
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── Фронтенды (прод-образы) ─────────────────────────────────────────────────
+  # web — Nuxt SSR (node); admin / partner — статика в nginx со SPA-fallback.
+  web:
+    build:
+      context: ./kurso-web
+    environment:
+      NODE_ENV: production
+      # Browser-facing API base. (SSR-side calls can target http://api:8080 via
+      # Nuxt runtimeConfig once endpoints exist.)
+      NUXT_PUBLIC_API_BASE: http://localhost:8080
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: ./kurso-admin
+    ports:
+      - "${ADMIN_PORT:-5174}:80"
+    restart: unless-stopped
+
+  partner:
+    build:
+      context: ./kurso-partner
+    ports:
+      - "${PARTNER_PORT:-5175}:80"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:

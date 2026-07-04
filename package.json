@@ -1,0 +1,19 @@
+{
+  "name": "kurso",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Kurso — агрегатор курсов обменников. Монорепо: kurso-api (Go), kurso-web (Nuxt), kurso-admin и kurso-partner (Vue).",
+  "type": "module",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2"
+  }
+}

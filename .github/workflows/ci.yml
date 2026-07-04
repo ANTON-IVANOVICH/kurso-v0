@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (kurso-api)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kurso-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache-dependency-path: kurso-api/go.sum
+
+      - run: go mod download
+
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || (echo 'run make fmt'; gofmt -l .; exit 1)
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: OpenAPI codegen is up to date
+        run: |
+          go tool oapi-codegen -config internal/adapter/http/openapi/config.yaml ../api/openapi.yaml
+          git diff --exit-code internal/adapter/http/openapi/types.gen.go
+
+      - name: Test
+        run: go test -race ./...
+
+      - name: Build
+        run: go build ./...
+
+  frontend:
+    name: Frontend (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [kurso-web, kurso-admin, kurso-partner]
+    defaults:
+      run:
+        working-directory: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+          cache-dependency-path: ${{ matrix.project }}/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: TypeScript codegen is up to date
+        run: |
+          pnpm run openapi
+          git diff --exit-code
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
