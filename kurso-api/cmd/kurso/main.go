@@ -15,11 +15,13 @@ import (
 	"time"
 
 	httpapi "github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/adapter/http"
+	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/adapter/store"
 	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/config"
 	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/platform/logger"
 	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/platform/postgres"
 	redisclient "github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/platform/redis"
 	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/platform/server"
+	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/service/rates"
 )
 
 func main() {
@@ -69,8 +71,28 @@ func run() error {
 		log.Info("redis connected")
 	}
 
+	// Application wiring: store → seed → rates service + SSE hub + runner.
+	st := store.New(pool)
+	if err := st.Seed(ctx); err != nil {
+		log.Warn("catalogue seed failed, continuing", "err", err)
+	} else {
+		log.Info("catalogue seeded/verified")
+	}
+
+	hub := rates.NewHub()
+	svc := rates.NewService(st, rdb, hub)
+	ticker := rates.NewTicker(st, svc, log, cfg.Rates.TickInterval)
+	go ticker.Run(ctx)
+	log.Info("rate runner started", "interval", cfg.Rates.TickInterval)
+
 	// Inbound adapter: HTTP router.
-	router := httpapi.NewRouter(httpapi.Deps{Log: log, DB: pool, Redis: rdb})
+	router := httpapi.NewRouter(httpapi.Deps{
+		Log:            log,
+		DB:             pool,
+		Redis:          rdb,
+		Svc:            svc,
+		AllowedOrigins: cfg.HTTP.AllowedOrigins,
+	})
 
 	srv := server.New(server.Config{
 		Addr:            ":" + cfg.HTTP.Port,

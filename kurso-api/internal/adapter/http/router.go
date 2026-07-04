@@ -6,8 +6,10 @@ package httpapi
 import (
 	"log/slog"
 	"net/http"
+	"slices"
 	"time"
 
+	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/service/rates"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,9 +18,11 @@ import (
 
 // Deps are the collaborators the HTTP adapter needs.
 type Deps struct {
-	Log   *slog.Logger
-	DB    *pgxpool.Pool
-	Redis *redis.Client
+	Log            *slog.Logger
+	DB             *pgxpool.Pool
+	Redis          *redis.Client
+	Svc            *rates.Service
+	AllowedOrigins []string
 }
 
 // api binds handlers to their dependencies.
@@ -34,16 +38,51 @@ func NewRouter(d Deps) http.Handler {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(30 * time.Second))
+	r.Use(a.cors)
 
 	// System / probes.
 	r.Get("/healthz", a.health)
 	r.Get("/readyz", a.readiness)
 
-	// Public API (v1). Endpoints are stubbed at Stage 0 and filled in at Stage 1.
+	// Public API (v1).
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Get("/currencies", a.listCurrencies)
+		// Regular request/response endpoints get a bounded timeout.
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.Timeout(15 * time.Second))
+			r.Get("/currencies", a.listCurrencies)
+			r.Get("/directions", a.listDirections)
+			r.Get("/exchangers", a.listExchangers)
+			r.Get("/exchangers/{slug}", a.getExchanger)
+			r.Get("/rates/{direction}", a.getRates)
+		})
+		// SSE stream is long-lived — it must not be wrapped by a request timeout.
+		r.Get("/rates/{direction}/stream", a.streamRates)
 	})
 
+	// Outbound click + referral redirect (Stage 1.9).
+	r.Get("/go/{slug}", a.clickout)
+
 	return r
+}
+
+// cors reflects allowed origins so the browser frontends can call the API in
+// development and production. Empty AllowedOrigins means "reflect any origin".
+func (a *api) cors(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		allowed := len(a.deps.AllowedOrigins) == 0 ||
+			slices.Contains(a.deps.AllowedOrigins, "*") ||
+			slices.Contains(a.deps.AllowedOrigins, origin)
+		if origin != "" && allowed {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Add("Vary", "Origin")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		}
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

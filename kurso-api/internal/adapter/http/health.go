@@ -4,8 +4,6 @@ import (
 	"context"
 	"net/http"
 	"time"
-
-	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/adapter/http/openapi"
 )
 
 // health is the liveness probe: it only proves the process is serving.
@@ -44,10 +42,4 @@ func (a *api) readiness(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, code, map[string]any{"status": status, "checks": checks})
-}
-
-// listCurrencies returns the currency catalogue. Stage 1 backs this with the
-// database; for now it returns an empty, contract-typed list.
-func (a *api) listCurrencies(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, []openapi.Currency{})
 }

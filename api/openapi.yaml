@@ -63,7 +63,6 @@ paths:
     get:
       tags: [public]
       summary: Список валют
-      description: Справочник валют. Полноценно реализуется на этапе 1.
       operationId: listCurrencies
       responses:
         '200':
@@ -76,6 +75,111 @@ paths:
                   $ref: '#/components/schemas/Currency'
         default:
           $ref: '#/components/responses/Error'
+
+  /api/v1/directions:
+    get:
+      tags: [public]
+      summary: Список направлений
+      operationId: listDirections
+      responses:
+        '200':
+          description: Список направлений
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Direction'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/v1/exchangers:
+    get:
+      tags: [public]
+      summary: Список обменников
+      operationId: listExchangers
+      responses:
+        '200':
+          description: Список обменников
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Exchanger'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/v1/exchangers/{slug}:
+    get:
+      tags: [public]
+      summary: Карточка обменника
+      operationId: getExchanger
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Обменник
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Exchanger'
+        '404':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/v1/rates/{direction}:
+    get:
+      tags: [public]
+      summary: Курсы по направлению
+      description: Текущие курсы обменников по направлению, лучший — первым.
+      operationId: getRates
+      parameters:
+        - name: direction
+          in: path
+          required: true
+          description: Слаг направления, например usdt-tinkoff
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Курсы по направлению
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RatesResponse'
+        '404':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/v1/rates/{direction}/stream:
+    get:
+      tags: [public]
+      summary: Поток обновлений курсов (SSE)
+      description: |
+        Server-Sent Events. Каждое событие `rates` содержит актуальный
+        массив `RateRow` по направлению. Курсы обновляются на сервере
+        и пушатся сюда без опроса.
+      operationId: streamRates
+      parameters:
+        - name: direction
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Поток событий SSE
+          content:
+            text/event-stream:
+              schema:
+                type: string
 
 components:
   schemas:
@@ -168,7 +272,7 @@ components:
 
     Direction:
       type: object
-      required: [id, fromCurrencyId, toCurrencyId, slug]
+      required: [id, fromCurrencyId, toCurrencyId, slug, fromCode, fromName, toCode, toName, isPopular]
       properties:
         id:
           type: string
@@ -181,10 +285,21 @@ components:
           format: uuid
         slug:
           type: string
-          example: btc-to-usdt-trc20
+          example: usdt-tinkoff
+        fromCode:
+          type: string
+          example: USDT
+        fromName:
+          type: string
+          example: Tether
+        toCode:
+          type: string
+          example: TINKOFF
+        toName:
+          type: string
+          example: Тинькофф
         isPopular:
           type: boolean
-          default: false
 
     ExchangerStatus:
       type: string
@@ -192,19 +307,26 @@ components:
 
     Exchanger:
       type: object
-      required: [id, slug, name, status]
+      required: [id, slug, name, status, partner, isVerified, reviewsCount, directionsCount, assets, onSince]
       properties:
         id:
           type: string
           format: uuid
         slug:
           type: string
-          example: fastchange
+          example: cryptobridge
         name:
           type: string
-          example: FastChange
+          example: CryptoBridge
         status:
           $ref: '#/components/schemas/ExchangerStatus'
+        partner:
+          type: boolean
+          description: Есть партнёрское размещение (реферальная ссылка)
+        isVerified:
+          type: boolean
+        reviewsCount:
+          type: integer
         ratingAvg:
           type: number
           format: float
@@ -215,6 +337,76 @@ components:
           type: string
           format: uri
           nullable: true
+        logoUrl:
+          type: string
+          format: uri
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        reserveTotal:
+          type: string
+          nullable: true
+          description: Суммарный резерв по активным курсам (decimal-строкой), null если курсов нет
+        directionsCount:
+          type: integer
+          description: Число направлений с активным курсом
+        assets:
+          type: array
+          items:
+            type: string
+          description: Торгуемые исходные валюты (коды), напр. USDT, BTC
+        onSince:
+          type: integer
+          description: Год добавления обменника на Kurso
+
+    RateRow:
+      type: object
+      description: Курс конкретного обменника по направлению (денормализовано для выдачи).
+      required: [exchangerId, exchangerSlug, exchangerName, partner, reviewsCount, rate, fetchedAt]
+      properties:
+        exchangerId:
+          type: string
+          format: uuid
+        exchangerSlug:
+          type: string
+        exchangerName:
+          type: string
+        partner:
+          type: boolean
+        ratingAvg:
+          type: number
+          format: float
+          nullable: true
+        reviewsCount:
+          type: integer
+        rate:
+          type: string
+          description: Курс decimal-строкой
+          example: '81.20'
+        reserve:
+          type: string
+          nullable: true
+        minAmount:
+          type: string
+          nullable: true
+        maxAmount:
+          type: string
+          nullable: true
+        fetchedAt:
+          type: string
+          format: date-time
+
+    RatesResponse:
+      type: object
+      required: [direction, rates]
+      properties:
+        direction:
+          $ref: '#/components/schemas/Direction'
+        rates:
+          type: array
+          items:
+            $ref: '#/components/schemas/RateRow'
 
     Rate:
       type: object

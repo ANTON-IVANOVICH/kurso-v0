@@ -104,11 +104,15 @@ type CurrencyKind string
 
 // Direction defines model for Direction.
 type Direction struct {
+	FromCode       string             `json:"fromCode"`
 	FromCurrencyId openapi_types.UUID `json:"fromCurrencyId"`
+	FromName       string             `json:"fromName"`
 	Id             openapi_types.UUID `json:"id"`
-	IsPopular      *bool              `json:"isPopular,omitempty"`
+	IsPopular      bool               `json:"isPopular"`
 	Slug           string             `json:"slug"`
+	ToCode         string             `json:"toCode"`
 	ToCurrencyId   openapi_types.UUID `json:"toCurrencyId"`
+	ToName         string             `json:"toName"`
 }
 
 // Error defines model for Error.
@@ -125,12 +129,30 @@ type Error struct {
 
 // Exchanger defines model for Exchanger.
 type Exchanger struct {
-	Id         openapi_types.UUID `json:"id"`
-	Name       string             `json:"name"`
-	RatingAvg  *float32           `json:"ratingAvg,omitempty"`
-	Slug       string             `json:"slug"`
-	Status     ExchangerStatus    `json:"status"`
-	WebsiteUrl *string            `json:"websiteUrl,omitempty"`
+	// Assets Торгуемые исходные валюты (коды), напр. USDT, BTC
+	Assets      []string `json:"assets"`
+	Description *string  `json:"description,omitempty"`
+
+	// DirectionsCount Число направлений с активным курсом
+	DirectionsCount int                `json:"directionsCount"`
+	Id              openapi_types.UUID `json:"id"`
+	IsVerified      bool               `json:"isVerified"`
+	LogoUrl         *string            `json:"logoUrl,omitempty"`
+	Name            string             `json:"name"`
+
+	// OnSince Год добавления обменника на Kurso
+	OnSince int `json:"onSince"`
+
+	// Partner Есть партнёрское размещение (реферальная ссылка)
+	Partner   bool     `json:"partner"`
+	RatingAvg *float32 `json:"ratingAvg,omitempty"`
+
+	// ReserveTotal Суммарный резерв по активным курсам (decimal-строкой), null если курсов нет
+	ReserveTotal *string         `json:"reserveTotal,omitempty"`
+	ReviewsCount int             `json:"reviewsCount"`
+	Slug         string          `json:"slug"`
+	Status       ExchangerStatus `json:"status"`
+	WebsiteUrl   *string         `json:"websiteUrl,omitempty"`
 }
 
 // ExchangerStatus defines model for ExchangerStatus.
@@ -164,6 +186,29 @@ type Rate struct {
 	// Reserve Резерв в валюте назначения (decimal-строка)
 	Reserve   *string   `json:"reserve,omitempty"`
 	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// RateRow Курс конкретного обменника по направлению (денормализовано для выдачи).
+type RateRow struct {
+	ExchangerId   openapi_types.UUID `json:"exchangerId"`
+	ExchangerName string             `json:"exchangerName"`
+	ExchangerSlug string             `json:"exchangerSlug"`
+	FetchedAt     time.Time          `json:"fetchedAt"`
+	MaxAmount     *string            `json:"maxAmount,omitempty"`
+	MinAmount     *string            `json:"minAmount,omitempty"`
+	Partner       bool               `json:"partner"`
+
+	// Rate Курс decimal-строкой
+	Rate         string   `json:"rate"`
+	RatingAvg    *float32 `json:"ratingAvg,omitempty"`
+	Reserve      *string  `json:"reserve,omitempty"`
+	ReviewsCount int      `json:"reviewsCount"`
+}
+
+// RatesResponse defines model for RatesResponse.
+type RatesResponse struct {
+	Direction Direction `json:"direction"`
+	Rates     []RateRow `json:"rates"`
 }
 
 // Readiness defines model for Readiness.

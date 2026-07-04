@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -18,6 +19,7 @@ type Config struct {
 	DB    DBConfig
 	Redis RedisConfig
 	Log   LogConfig
+	Rates RatesConfig
 }
 
 // HTTPConfig holds HTTP server tuning.
@@ -27,6 +29,12 @@ type HTTPConfig struct {
 	WriteTimeout    time.Duration
 	IdleTimeout     time.Duration
 	ShutdownTimeout time.Duration
+	AllowedOrigins  []string
+}
+
+// RatesConfig tunes the rate runner (stand-in for the parser pipeline).
+type RatesConfig struct {
+	TickInterval time.Duration
 }
 
 // DBConfig holds the Postgres connection string.
@@ -64,6 +72,10 @@ func Load() (Config, error) {
 			WriteTimeout:    getDuration("HTTP_WRITE_TIMEOUT", 15*time.Second),
 			IdleTimeout:     getDuration("HTTP_IDLE_TIMEOUT", 60*time.Second),
 			ShutdownTimeout: getDuration("HTTP_SHUTDOWN_TIMEOUT", 10*time.Second),
+			AllowedOrigins:  splitCSV(getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000")),
+		},
+		Rates: RatesConfig{
+			TickInterval: getDuration("RATES_TICK_INTERVAL", 5*time.Second),
 		},
 		DB: DBConfig{
 			URL: getenv("DATABASE_URL", "postgres://kurso:kurso@localhost:5432/kurso?sslmode=disable"),
@@ -95,6 +107,17 @@ func getenv(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+// splitCSV parses a comma-separated env value into a trimmed, non-empty slice.
+func splitCSV(v string) []string {
+	var out []string
+	for _, part := range strings.Split(v, ",") {
+		if s := strings.TrimSpace(part); s != "" {
+			out = append(out, s)
+		}
+	}
+	return out
 }
 
 func getDuration(key string, fallback time.Duration) time.Duration {
