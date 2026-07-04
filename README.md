@@ -61,9 +61,6 @@ make stack-logs
 make stack-down    # остановить (stack-down-v — со сносом данных)
 ```
 
-Нет локальных Postgres/Redis? Можно поднять только их в Docker: `make db-up`
-(при занятом 5432/6379 — `POSTGRES_PORT=5433 REDIS_PORT=6380 make db-up`).
-
 ## Полезные команды
 
 ```bash
