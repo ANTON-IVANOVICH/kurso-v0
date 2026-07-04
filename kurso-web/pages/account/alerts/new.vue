@@ -7,7 +7,8 @@ import type { AlertChannel } from '~/composables/useAlerts'
 // (how often the threshold was actually reached). Creating an alert persists it;
 // the account/triggered screens evaluate it live against the rates API.
 definePageMeta({ layout: false, middleware: 'auth' })
-useSeoMeta({ title: 'Новый алерт — Kurso' })
+const { t, plural } = useI18n()
+useSeoMeta({ title: () => `${t('alertBuilder.title')} — Kurso` })
 
 const { give, get, giveCode, directionSlug, reversed, unitRate } = useCalculator()
 const { openPicker } = useCurrencyPicker()
@@ -82,13 +83,6 @@ const reachedCount = computed(
       direction.value === 'above' ? v >= threshold.value : v <= threshold.value,
     ).length,
 )
-function plural(n: number, one: string, few: string, many: string) {
-  const m10 = n % 10
-  const m100 = n % 100
-  if (m10 === 1 && m100 !== 11) return one
-  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few
-  return many
-}
 
 // --- filters + channels ---
 const scope = ref<'all' | 'favorites' | 'manual'>('all')
@@ -99,10 +93,20 @@ const channels = ref<Record<AlertChannel, boolean>>({ telegram: true, email: fal
 const showFilters = ref(false)
 
 const scopeLabel = computed(
-  () => ({ all: 'Все обменники', favorites: 'Избранные', manual: 'Вручную' })[scope.value],
+  () =>
+    ({
+      all: t('alertBuilder.allExchangers'),
+      favorites: t('alertBuilder.fFavorites'),
+      manual: t('alertBuilder.fManual'),
+    })[scope.value],
 )
 const validityLabel = computed(
-  () => ({ '7': '7 дней', '30': '30 дней', forever: 'бессрочно' })[validity.value],
+  () =>
+    ({
+      '7': t('alertBuilder.days7'),
+      '30': t('alertBuilder.days30'),
+      forever: t('alertBuilder.foreverShort'),
+    })[validity.value],
 )
 
 const canCreate = computed(() => !!directionSlug.value && threshold.value > 0)
@@ -127,16 +131,16 @@ function create() {
   navigateTo('/account/alerts')
 }
 
-const scopeOpts = [
-  { value: 'all', label: 'Все' },
-  { value: 'favorites', label: 'Избранные' },
-  { value: 'manual', label: 'Вручную' },
-]
-const validityOpts = [
-  { value: '7', label: '7 дней' },
-  { value: '30', label: '30 дней' },
-  { value: 'forever', label: 'Бессрочно' },
-]
+const scopeOpts = computed(() => [
+  { value: 'all', label: t('alertBuilder.fAll') },
+  { value: 'favorites', label: t('alertBuilder.fFavorites') },
+  { value: 'manual', label: t('alertBuilder.fManual') },
+])
+const validityOpts = computed(() => [
+  { value: '7', label: t('alertBuilder.days7') },
+  { value: '30', label: t('alertBuilder.days30') },
+  { value: 'forever', label: t('alertBuilder.forever') },
+])
 </script>
 
 <template>
@@ -150,16 +154,16 @@ const validityOpts = [
           class="text-[15px] text-ink-muted"
           @click="navigateTo('/account/alerts')"
         >
-          Отмена
+          {{ t('alertBuilder.cancel') }}
         </button>
-        <span class="text-base font-bold text-ink">Новый алерт</span>
+        <span class="text-base font-bold text-ink">{{ t('alertBuilder.title') }}</span>
         <button
           type="button"
           class="text-[15px] font-semibold text-brand-bright disabled:opacity-40"
           :disabled="!canCreate"
           @click="create"
         >
-          Создать
+          {{ t('alertBuilder.create') }}
         </button>
       </div>
 
@@ -168,11 +172,13 @@ const validityOpts = [
         <div class="flex flex-col gap-4">
           <!-- rule sentence -->
           <div class="rounded-2xl border border-line bg-surface p-4">
-            <div class="mb-2.5 text-xs uppercase tracking-[0.05em] text-ink-faint">Правило</div>
+            <div class="mb-2.5 text-xs uppercase tracking-[0.05em] text-ink-faint">
+              {{ t('alertBuilder.rule') }}
+            </div>
             <div
               class="flex flex-wrap items-center gap-x-2 gap-y-2.5 text-[17px] leading-relaxed text-ink"
             >
-              <span>Уведомить, когда</span>
+              <span>{{ t('alertBuilder.notifyWhen') }}</span>
               <button
                 type="button"
                 class="inline-flex items-center gap-1.5 rounded-full border border-line-strong bg-surface-chip px-2.5 py-1.5 text-[14px] font-semibold transition-colors hover:border-brand"
@@ -208,7 +214,7 @@ const validityOpts = [
                   >{{ get.symbol }}</span
                 >{{ get.name }}
               </button>
-              <span>станет</span>
+              <span>{{ t('alertBuilder.becomes') }}</span>
               <button
                 type="button"
                 class="inline-flex items-center gap-1 rounded-full border border-line-strong bg-surface-chip px-2.5 py-1.5 text-[14px] font-semibold transition-colors hover:border-brand"
@@ -226,7 +232,7 @@ const validityOpts = [
                 >
                   <path :d="direction === 'above' ? 'M5 14l7-7 7 7' : 'M5 10l7 7 7-7'" />
                 </svg>
-                {{ direction === 'above' ? 'выше' : 'ниже' }}
+                {{ direction === 'above' ? t('alertBuilder.above') : t('alertBuilder.below') }}
               </button>
               <span
                 class="inline-flex items-baseline gap-1 rounded-full border border-brand bg-brand/[0.08] px-2.5 py-1"
@@ -242,7 +248,7 @@ const validityOpts = [
             </div>
 
             <p v-if="!directionSlug" class="mt-3 text-xs text-warning">
-              Для этой пары пока нет курсов — выберите крипту и фиат.
+              {{ t('alertBuilder.noPairRates') }}
             </p>
 
             <!-- percent presets -->
@@ -268,7 +274,7 @@ const validityOpts = [
           <!-- channels -->
           <div class="rounded-2xl border border-line bg-surface p-4">
             <div class="mb-2.5 text-xs uppercase tracking-[0.05em] text-ink-faint">
-              Куда уведомить
+              {{ t('alertBuilder.channelsTitle') }}
             </div>
             <div class="flex flex-col gap-2.5">
               <label class="flex items-center gap-3">
@@ -291,7 +297,7 @@ const validityOpts = [
                 <span class="flex flex-1 items-center gap-2 text-[15px] font-semibold text-ink"
                   >Telegram<span
                     class="rounded bg-brand/15 px-1.5 py-0.5 text-[10px] font-semibold text-brand-bright"
-                    >рекомендуем</span
+                    >{{ t('alertBuilder.recommended') }}</span
                   ></span
                 >
                 <KToggle v-model="channels.telegram" />
@@ -349,29 +355,33 @@ const validityOpts = [
               @click="showFilters = !showFilters"
             >
               <span class="flex-1 truncate text-[13px] text-ink-muted">
-                {{ scopeLabel }}<template v-if="minReserve"> · резерв 5M+</template
-                ><template v-if="ratingFilter"> · ★ ≥ 4.5</template> · {{ validityLabel }}
+                {{ scopeLabel
+                }}<template v-if="minReserve"> · {{ t('alertBuilder.reserveTag') }}</template
+                ><template v-if="ratingFilter"> · {{ t('alertBuilder.ratingTag') }}</template> ·
+                {{ validityLabel }}
               </span>
               <span class="text-[13px] font-semibold text-brand-bright">{{
-                showFilters ? 'Скрыть' : 'Настроить'
+                showFilters ? t('alertBuilder.hide') : t('alertBuilder.configure')
               }}</span>
             </button>
             <div v-if="showFilters" class="flex flex-col gap-3 border-t border-line px-4 py-4">
               <div>
-                <div class="mb-2 text-xs uppercase tracking-[0.05em] text-ink-faint">Обменники</div>
+                <div class="mb-2 text-xs uppercase tracking-[0.05em] text-ink-faint">
+                  {{ t('alertBuilder.exchangersLabel') }}
+                </div>
                 <KSegmented v-model="scope" :options="scopeOpts" />
               </div>
               <label class="flex items-center justify-between">
-                <span class="text-sm text-ink">Только с резервом от 5M ₽</span>
+                <span class="text-sm text-ink">{{ t('alertBuilder.reserveFilter') }}</span>
                 <KToggle v-model="minReserve" />
               </label>
               <label class="flex items-center justify-between">
-                <span class="text-sm text-ink">Учитывать рейтинг ≥ 4.5</span>
+                <span class="text-sm text-ink">{{ t('alertBuilder.ratingFilter') }}</span>
                 <KToggle v-model="ratingFilter" />
               </label>
               <div>
                 <div class="mb-2 text-xs uppercase tracking-[0.05em] text-ink-faint">
-                  Срок действия
+                  {{ t('alertBuilder.validityLabel') }}
                 </div>
                 <KSegmented v-model="validity" :options="validityOpts" />
               </div>
@@ -383,9 +393,11 @@ const validityOpts = [
         <div class="flex flex-col gap-4">
           <div class="rounded-2xl border border-line bg-surface p-4">
             <div class="mb-3 flex items-center justify-between">
-              <span class="text-[13px] font-semibold text-ink">Курс · 7 дней</span>
+              <span class="text-[13px] font-semibold text-ink">{{
+                t('alertBuilder.chartTitle')
+              }}</span>
               <span v-if="unitRate != null" class="tnum text-[13px] text-ink-faint"
-                >сейчас
+                >{{ t('alertBuilder.now') }}
                 <span class="text-ink-muted"
                   >{{ fmtNumber(unitRate, decimals) }} {{ unit }}</span
                 ></span
@@ -395,7 +407,7 @@ const validityOpts = [
             <div class="mt-2 flex items-center gap-2">
               <span class="inline-block h-0 w-4 border-t-2 border-dashed border-brand-bright" />
               <span class="tnum text-xs font-semibold text-brand-bright"
-                >порог {{ thresholdStr }} {{ unit }}</span
+                >{{ t('alertBuilder.threshold') }} {{ thresholdStr }} {{ unit }}</span
               >
             </div>
           </div>
@@ -416,33 +428,41 @@ const validityOpts = [
                 <circle cx="12" cy="12" r="9" />
                 <path d="M12 7v5l3 3" />
               </svg>
-              <span class="text-[13px] font-semibold text-brand-bright">Прогноз срабатывания</span>
+              <span class="text-[13px] font-semibold text-brand-bright">{{
+                t('alertBuilder.forecastTitle')
+              }}</span>
             </div>
             <p class="text-[13px] leading-relaxed text-ink-muted">
-              <template v-if="unitRate == null">Курс загружается…</template>
-              <template v-else-if="movePct != null && movePct <= 0">
-                Порог уже достигнут — алерт сработает при следующей проверке.
-              </template>
+              <template v-if="unitRate == null">{{ t('alertBuilder.rateLoading') }}</template>
+              <template v-else-if="movePct != null && movePct <= 0">{{
+                t('alertBuilder.alreadyHit')
+              }}</template>
               <template v-else-if="movePct != null">
-                Нужен {{ direction === 'above' ? 'рост' : 'спад' }} на
-                <span class="font-semibold text-ink">{{ fmtNumber(movePct, 1) }}%</span>.
+                {{
+                  t('alertBuilder.need', {
+                    dir: direction === 'above' ? t('alertBuilder.rise') : t('alertBuilder.fall'),
+                    pct: fmtNumber(movePct, 1),
+                  })
+                }}
                 <template v-if="reachedCount > 0">
-                  За неделю курс достигал
-                  <span class="tnum font-semibold text-ink">{{ thresholdStr }} {{ unit }}</span>
-                  {{ reachedCount }} {{ plural(reachedCount, 'раз', 'раза', 'раз') }}.
+                  {{
+                    t('alertBuilder.reached', {
+                      value: `${thresholdStr} ${unit}`,
+                      n: reachedCount,
+                      word: plural(reachedCount, 'times'),
+                    })
+                  }}
                 </template>
-                <template v-else>За последнюю неделю курс не доходил до порога.</template>
+                <template v-else>{{ t('alertBuilder.notReached') }}</template>
               </template>
             </p>
           </div>
 
           <KButton block size="lg" class="!rounded-2xl" :disabled="!canCreate" @click="create">
-            Создать алерт
+            {{ t('alertBuilder.createAlert') }}
           </KButton>
           <p class="text-center text-xs leading-relaxed text-ink-faint">
-            До <span class="tnum">{{ ALERT_LIMIT }}</span> активных алертов на бесплатном тарифе ·
-            сейчас
-            <span class="tnum">{{ alerts.length }}</span>
+            {{ t('alertBuilder.limitNote', { limit: ALERT_LIMIT, n: alerts.length }) }}
           </p>
         </div>
       </div>

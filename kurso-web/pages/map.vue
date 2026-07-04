@@ -7,10 +7,10 @@ import type { MapPoint } from '~/composables/useMapPoints'
 // renders an interactive dark map with markers + popups, otherwise the page falls
 // back to a static projected preview. The mobile bottom nav stays visible here.
 definePageMeta({ layout: false })
+const { t, plural } = useI18n()
 useSeoMeta({
-  title: 'Карта обменников — Kurso',
-  description:
-    'Карта офлайн-обменников с наличными: точки на карте, курсы, часы работы и маршруты до ближайших пунктов.',
+  title: () => t('map.seoTitle'),
+  description: () => t('map.seoDesc'),
 })
 
 const DIRECTION = 'usdt-tinkoff'
@@ -60,7 +60,7 @@ function distanceKm(p: MapPoint): string {
       Math.cos((p.lat * Math.PI) / 180) *
       Math.sin(dLng / 2) ** 2
   const km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return km < 10 ? `${km.toFixed(1)} км` : `${Math.round(km)} км`
+  return km < 10 ? `${km.toFixed(1)} ${t('map.km')}` : `${Math.round(km)} ${t('map.km')}`
 }
 
 const isOpen = (p: MapPoint) => !!p.hours && p.hours !== 'закрыто'
@@ -123,6 +123,11 @@ onMounted(() => {
       selected: selectedSlug,
       userLoc,
       fmtRate,
+      labels: {
+        partner: t('exchangers.partner'),
+        route: t('map.route'),
+        go: t('map.go'),
+      },
       onSelect: (slug) => (selectedSlug.value = slug),
       onRoute: route,
       onGo: go,
@@ -254,7 +259,7 @@ function locate() {
                   <span
                     v-if="selected.partner"
                     class="flex-none rounded-md bg-brand/15 px-1.5 py-0.5 text-[11px] font-semibold text-brand-bright"
-                    >Партнёр</span
+                    >{{ t('exchangers.partner') }}</span
                   >
                 </div>
                 <div class="mt-1.5 text-[13px] text-ink-muted">
@@ -266,7 +271,9 @@ function locate() {
               </div>
               <div class="flex-none text-right">
                 <div class="tnum text-xl font-bold text-ink">{{ fmtRate(selected.rate) }}</div>
-                <div class="mt-0.5 text-xs text-success-bright">за 1 USDT</div>
+                <div class="mt-0.5 text-xs text-success-bright">
+                  {{ t('map.perUnit', { code: 'USDT' }) }}
+                </div>
               </div>
             </div>
             <div class="mb-3.5 flex items-center gap-2.5 text-[13px]">
@@ -303,9 +310,9 @@ function locate() {
                 >
                   <path d="M3 11l18-8-8 18-2-8-8-2Z" />
                 </svg>
-                Маршрут
+                {{ t('map.route') }}
               </button>
-              <KButton class="flex-1" @click="go(selected)">Перейти</KButton>
+              <KButton class="flex-1" @click="go(selected)">{{ t('map.go') }}</KButton>
             </div>
           </div>
           <div
@@ -336,7 +343,7 @@ function locate() {
           </svg>
           <input
             v-model="search"
-            placeholder="Поиск по адресу или названию"
+            :placeholder="t('map.searchPlaceholder')"
             class="w-full bg-transparent text-sm text-ink placeholder:text-ink-faint focus:outline-none"
           />
         </label>
@@ -357,7 +364,7 @@ function locate() {
               <path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z" />
               <circle cx="12" cy="10" r="2.5" />
             </svg>
-            Москва
+            {{ t('map.city') }}
           </span>
           <span
             class="inline-flex items-center gap-1.5 rounded-lg border border-line-strong bg-surface py-2 pl-1.5 pr-3 text-[13px] text-ink"
@@ -389,8 +396,9 @@ function locate() {
         <div
           class="mt-3 flex items-center gap-2 border-t border-line pt-2.5 text-[13px] text-ink-faint"
         >
-          <KStatusDot tone="success" pulse :size="8" />Найдено
-          <span class="tnum font-semibold text-ink">{{ filtered.length }}</span> точек
+          <KStatusDot tone="success" pulse :size="8" />{{ t('map.found') }}
+          <span class="tnum font-semibold text-ink">{{ filtered.length }}</span>
+          {{ plural(filtered.length, 'points') }}
         </div>
       </div>
 
@@ -418,7 +426,7 @@ function locate() {
             <path d="M9 4v13.5" />
             <path d="M15 6.5V20" />
           </svg>
-          Карта
+          {{ t('map.viewMap') }}
         </button>
         <button
           type="button"
@@ -439,7 +447,7 @@ function locate() {
             <path d="M8 6h13M8 12h13M8 18h13" />
             <path d="M3 6h.01M3 12h.01M3 18h.01" />
           </svg>
-          Список
+          {{ t('map.viewList') }}
         </button>
       </div>
 
@@ -475,7 +483,7 @@ function locate() {
         >
           <button
             type="button"
-            aria-label="Приблизить"
+            :aria-label="t('map.zoomInAria')"
             class="flex h-[42px] w-[42px] items-center justify-center border-b border-line text-ink transition-colors hover:bg-white/[0.04]"
             @click="zoomIn"
           >
@@ -493,7 +501,7 @@ function locate() {
           </button>
           <button
             type="button"
-            aria-label="Отдалить"
+            :aria-label="t('map.zoomOutAria')"
             class="flex h-[42px] w-[42px] items-center justify-center text-ink transition-colors hover:bg-white/[0.04]"
             @click="zoomOut"
           >
@@ -512,7 +520,7 @@ function locate() {
         </div>
         <button
           type="button"
-          aria-label="Моё местоположение"
+          :aria-label="t('map.locateAria')"
           class="flex h-[42px] w-[42px] items-center justify-center rounded-xl border border-line bg-[rgba(14,19,22,0.9)] text-brand-bright shadow-pop backdrop-blur transition-colors hover:bg-white/[0.04]"
           @click="locate"
         >
@@ -551,7 +559,7 @@ function locate() {
         </svg>
         <input
           v-model="search"
-          placeholder="Москва · USDT → RUB"
+          :placeholder="t('map.searchMobile')"
           class="min-w-0 flex-1 bg-transparent text-sm font-semibold text-ink placeholder:text-ink-muted focus:outline-none"
         />
         <span
@@ -563,7 +571,7 @@ function locate() {
       <!-- mobile: locate button -->
       <button
         type="button"
-        aria-label="Моё местоположение"
+        :aria-label="t('map.locateAria')"
         class="absolute bottom-[236px] right-4 z-[9] flex h-11 w-11 items-center justify-center rounded-full border border-line bg-[rgba(14,19,22,0.92)] text-brand-bright shadow-pop backdrop-blur md:hidden"
         @click="locate"
       >
@@ -603,7 +611,7 @@ function locate() {
               <span
                 v-if="p.partner"
                 class="rounded-[5px] bg-brand/[0.18] px-1.5 py-0.5 text-[10px] font-semibold text-brand-bright"
-                >Партнёр</span
+                >{{ t('exchangers.partner') }}</span
               >
             </div>
             <div
@@ -620,7 +628,7 @@ function locate() {
             >
             ·
             <span :class="isOpen(p) ? 'text-success-bright' : 'text-ink-ghost'">{{
-              isOpen(p) ? 'открыто' : 'закрыто'
+              isOpen(p) ? t('map.open') : t('map.closed')
             }}</span>
           </div>
           <div class="flex items-center justify-between">
@@ -644,7 +652,7 @@ function locate() {
               >
                 <path d="M3 11l18-8-8 18-2-8-8-2Z" />
               </svg>
-              Маршрут
+              {{ t('map.route') }}
             </span>
           </div>
         </button>

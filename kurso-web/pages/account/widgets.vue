@@ -6,7 +6,8 @@ import { computed, onMounted, ref } from 'vue'
 // WordPress). The preview data is real (top exchangers for the pair); the embed
 // script URL is the target contract for the hosted widget bundle.
 definePageMeta({ layout: 'account', middleware: 'auth' })
-useSeoMeta({ title: 'Виджеты — Kurso' })
+const { t } = useI18n()
+useSeoMeta({ title: () => t('widgets.seoTitle') })
 
 const PAIR = 'usdt-tinkoff'
 const PAIR_LABEL = 'USDT → Тинькофф'
@@ -21,48 +22,48 @@ interface WidgetType {
   sub: string
   icon: string
 }
-const TYPES: WidgetType[] = [
+const TYPES = computed<WidgetType[]>(() => [
   {
     key: 'rates',
-    name: 'Таблица курсов',
-    sub: 'Топ обменников по паре',
+    name: t('widgets.ratesName'),
+    sub: t('widgets.ratesSub'),
     icon: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 4v16"/>',
   },
   {
     key: 'calculator',
-    name: 'Калькулятор',
-    sub: 'Отдаю / получаю',
+    name: t('widgets.calcName'),
+    sub: t('widgets.calcSub'),
     icon: '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 11h2M14 11h2M8 16h6"/>',
   },
   {
     key: 'badge',
-    name: 'Бейдж',
-    sub: '«Лучший курс»',
+    name: t('widgets.badgeName'),
+    sub: t('widgets.badgeSub'),
     icon: '<path d="M12 3 4 6v6c0 5 3.5 7.5 8 9 4.5-1.5 8-4 8-9V6Z"/><path d="m9 12 2 2 4-4"/>',
   },
   {
     key: 'card',
-    name: 'Карточка',
-    sub: 'Обменника с курсом',
+    name: t('widgets.cardName'),
+    sub: t('widgets.cardSub'),
     icon: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h6v9"/>',
   },
   {
     key: 'button',
-    name: 'Кнопка',
-    sub: '«Лучший курс»',
+    name: t('widgets.buttonName'),
+    sub: t('widgets.buttonSub'),
     icon: '<rect x="3" y="8" width="18" height="8" rx="4"/><path d="M7 12h2"/>',
   },
-]
+])
 
 const sel = ref(0)
-const type = computed(() => TYPES[sel.value])
+const type = computed(() => TYPES.value[sel.value])
 
 // settings
 const rows = ref(3)
 const amount = ref(1500)
 const size = ref<'S' | 'M' | 'L'>('M')
 const cardSlug = ref('')
-const buttonLabel = ref('Лучший курс на Kurso')
+const buttonLabel = ref(t('widgets.buttonDefault'))
 const theme = ref<'dark' | 'light' | 'auto'>('dark')
 const accent = ref('#2E7DF2')
 const showReserve = ref(true)
@@ -160,7 +161,9 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
   <div>
     <!-- breadcrumb -->
     <div class="mb-4 flex items-center gap-2 text-xs text-ink-faint">
-      <NuxtLink to="/account/partner" class="hover:text-ink-muted">Партнёрка</NuxtLink>
+      <NuxtLink to="/account/partner" class="hover:text-ink-muted">{{
+        t('widgets.breadcrumb')
+      }}</NuxtLink>
       <svg
         width="12"
         height="12"
@@ -173,19 +176,19 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
       >
         <path d="M9 6l6 6-6 6" />
       </svg>
-      <span class="font-semibold text-ink-muted">Виджеты</span>
+      <span class="font-semibold text-ink-muted">{{ t('widgets.breadcrumbCurrent') }}</span>
     </div>
 
-    <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">Конструктор виджетов</h1>
+    <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">{{ t('widgets.title') }}</h1>
     <p class="mb-6 mt-1 max-w-xl text-sm leading-relaxed text-ink-faint">
-      Выберите вид виджета — превью, настройки и код обновятся. Данные в превью — живые курсы Kurso.
+      {{ t('widgets.subtitle') }}
     </p>
 
     <!-- catalog -->
     <div class="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       <button
-        v-for="(t, i) in TYPES"
-        :key="t.key"
+        v-for="(wt, i) in TYPES"
+        :key="wt.key"
         type="button"
         class="relative rounded-2xl border p-4 text-left transition-all"
         :class="
@@ -209,11 +212,11 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            v-html="t.icon"
+            v-html="wt.icon"
           />
         </span>
-        <div class="text-[15px] font-bold tracking-[-0.01em] text-ink">{{ t.name }}</div>
-        <div class="mt-0.5 text-xs text-ink-faint">{{ t.sub }}</div>
+        <div class="text-[15px] font-bold tracking-[-0.01em] text-ink">{{ wt.name }}</div>
+        <div class="mt-0.5 text-xs text-ink-faint">{{ wt.sub }}</div>
         <span
           v-if="i === sel"
           class="absolute right-3.5 top-3.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand"
@@ -241,7 +244,9 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
         class="flex w-full flex-col gap-[18px] rounded-2xl border border-line bg-surface p-5 lg:w-[340px] lg:flex-none"
       >
         <div>
-          <div class="mb-2 text-xs uppercase tracking-[0.05em] text-ink-faint">Направление</div>
+          <div class="mb-2 text-xs uppercase tracking-[0.05em] text-ink-faint">
+            {{ t('widgets.direction') }}
+          </div>
           <div
             class="flex items-center gap-2.5 rounded-xl border border-line bg-well px-3 py-2.5 text-sm font-semibold text-ink"
           >
@@ -256,14 +261,14 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
         <!-- type-specific control -->
         <div v-if="type.key === 'rates'">
           <div class="mb-2 flex justify-between text-xs uppercase tracking-[0.05em] text-ink-faint">
-            <span>Количество строк</span
+            <span>{{ t('widgets.rowsCount') }}</span
             ><span class="tnum font-semibold text-brand-bright">{{ rows }}</span>
           </div>
           <input v-model.number="rows" type="range" min="2" max="6" class="w-full accent-brand" />
         </div>
         <div v-else-if="type.key === 'calculator'">
           <div class="mb-2 text-xs uppercase tracking-[0.05em] text-ink-faint">
-            Сумма по умолчанию
+            {{ t('widgets.defaultAmount') }}
           </div>
           <input
             v-model.number="amount"
@@ -273,7 +278,9 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
           />
         </div>
         <div v-else-if="type.key === 'badge'">
-          <div class="mb-2 text-xs uppercase tracking-[0.05em] text-ink-faint">Размер</div>
+          <div class="mb-2 text-xs uppercase tracking-[0.05em] text-ink-faint">
+            {{ t('widgets.size') }}
+          </div>
           <div class="flex gap-1.5 rounded-xl border border-line bg-well p-1.5">
             <button
               v-for="s in ['S', 'M', 'L'] as const"
@@ -288,7 +295,9 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
           </div>
         </div>
         <div v-else-if="type.key === 'card'">
-          <div class="mb-2 text-xs uppercase tracking-[0.05em] text-ink-faint">Обменник</div>
+          <div class="mb-2 text-xs uppercase tracking-[0.05em] text-ink-faint">
+            {{ t('widgets.exchanger') }}
+          </div>
           <select
             v-model="cardSlug"
             class="w-full rounded-xl border border-line bg-well px-3 py-2.5 text-sm font-semibold text-ink focus:border-brand focus:outline-none"
@@ -299,7 +308,9 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
           </select>
         </div>
         <div v-else>
-          <div class="mb-2 text-xs uppercase tracking-[0.05em] text-ink-faint">Текст кнопки</div>
+          <div class="mb-2 text-xs uppercase tracking-[0.05em] text-ink-faint">
+            {{ t('widgets.buttonText') }}
+          </div>
           <input
             v-model="buttonLabel"
             class="w-full rounded-xl border border-line bg-well px-3 py-2.5 text-sm text-ink focus:border-brand focus:outline-none"
@@ -307,7 +318,9 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
         </div>
 
         <div>
-          <div class="mb-2 text-xs uppercase tracking-[0.05em] text-ink-faint">Тема</div>
+          <div class="mb-2 text-xs uppercase tracking-[0.05em] text-ink-faint">
+            {{ t('widgets.theme') }}
+          </div>
           <div class="flex gap-1.5 rounded-xl border border-line bg-well p-1.5">
             <button
               v-for="th in ['dark', 'light', 'auto'] as const"
@@ -317,12 +330,20 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
               :class="theme === th ? 'bg-surface-chip text-ink' : 'text-ink-faint hover:text-ink'"
               @click="theme = th"
             >
-              {{ { dark: 'Тёмная', light: 'Светлая', auto: 'Авто' }[th] }}
+              {{
+                {
+                  dark: t('widgets.themeDark'),
+                  light: t('widgets.themeLight'),
+                  auto: t('widgets.themeAuto'),
+                }[th]
+              }}
             </button>
           </div>
         </div>
         <div>
-          <div class="mb-2 text-xs uppercase tracking-[0.05em] text-ink-faint">Акцент</div>
+          <div class="mb-2 text-xs uppercase tracking-[0.05em] text-ink-faint">
+            {{ t('widgets.accent') }}
+          </div>
           <div class="flex gap-2.5">
             <button
               v-for="c in ACCENTS"
@@ -337,17 +358,22 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
         </div>
         <div class="flex flex-col gap-3">
           <label class="flex items-center justify-between text-sm text-ink"
-            ><span>Показывать резерв</span><KToggle v-model="showReserve"
+            ><span>{{ t('widgets.showReserve') }}</span
+            ><KToggle v-model="showReserve"
           /></label>
           <label class="flex items-center justify-between text-sm text-ink"
-            ><span>Логотип Kurso</span><KToggle v-model="showLogo"
+            ><span>{{ t('widgets.kursoLogo') }}</span
+            ><KToggle v-model="showLogo"
           /></label>
           <label class="flex items-center justify-between text-sm text-ink"
-            ><span>Авто-обновление</span><KToggle v-model="autoRefresh"
+            ><span>{{ t('widgets.autoRefresh') }}</span
+            ><KToggle v-model="autoRefresh"
           /></label>
         </div>
         <div>
-          <div class="mb-2 text-xs uppercase tracking-[0.05em] text-ink-faint">UTM-метка</div>
+          <div class="mb-2 text-xs uppercase tracking-[0.05em] text-ink-faint">
+            {{ t('widgets.utmTag') }}
+          </div>
           <div
             class="tnum rounded-xl border border-line bg-well px-3 py-2.5 text-[13px] text-ink-body"
           >
@@ -361,11 +387,11 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
         class="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-line bg-well"
       >
         <div class="flex items-center justify-between border-b border-line px-[18px] py-3">
-          <span class="font-label text-xs uppercase tracking-[0.05em] text-ink-faint"
-            >Живое превью</span
-          >
+          <span class="font-label text-xs uppercase tracking-[0.05em] text-ink-faint">{{
+            t('widgets.livePreview')
+          }}</span>
           <span class="flex items-center gap-1.5 text-xs text-ink-faint"
-            ><KStatusDot tone="success" :size="7" pulse />обновляется</span
+            ><KStatusDot tone="success" :size="7" pulse />{{ t('widgets.updating') }}</span
           >
         </div>
         <div
@@ -421,7 +447,7 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
                 class="rounded-[9px] py-2.5 text-center text-[13px] font-semibold text-white"
                 :style="{ background: accent }"
               >
-                Все курсы на Kurso →
+                {{ t('widgets.allRatesCta') }}
               </div>
             </div>
           </div>
@@ -440,7 +466,7 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
               class="flex items-center justify-between border-b px-4 py-3.5"
               :class="light ? 'border-[#EEF0F3]' : 'border-line'"
             >
-              <span class="text-sm font-bold">Калькулятор обмена</span
+              <span class="text-sm font-bold">{{ t('widgets.calcTitle') }}</span
               ><span v-if="showLogo" class="text-[11px] text-ink-faint">Kurso</span>
             </div>
             <div class="p-4">
@@ -448,7 +474,7 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
                 class="rounded-xl border px-3 py-2.5"
                 :class="light ? 'border-[#E3E6EA] bg-[#F7F8FA]' : 'border-line bg-well'"
               >
-                <div class="mb-1.5 text-[11px] text-ink-faint">Отдаёте</div>
+                <div class="mb-1.5 text-[11px] text-ink-faint">{{ t('widgets.give') }}</div>
                 <div class="flex items-center gap-2.5">
                   <span
                     class="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[#26A17B] text-[10px] font-bold text-white"
@@ -480,7 +506,7 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
                 class="rounded-xl border px-3 py-2.5"
                 :class="light ? 'border-[#E3E6EA] bg-[#F7F8FA]' : 'border-line bg-well'"
               >
-                <div class="mb-1.5 text-[11px] text-ink-faint">Получаете</div>
+                <div class="mb-1.5 text-[11px] text-ink-faint">{{ t('widgets.receive') }}</div>
                 <div class="flex items-center gap-2.5">
                   <span
                     class="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[#FFDD2D] text-[10px] font-extrabold text-[#111]"
@@ -493,14 +519,14 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
                 class="mt-3 flex items-center justify-between rounded-[10px] border px-3 py-2.5 text-xs"
                 :class="light ? 'border-[#E3E6EA] bg-[#F7F8FA]' : 'border-line bg-well'"
               >
-                <span class="text-ink-faint">Лучший · {{ bestName }}</span
+                <span class="text-ink-faint">{{ t('widgets.best') }} · {{ bestName }}</span
                 ><span class="tnum font-bold">{{ bestRate }} ₽</span>
               </div>
               <div
                 class="mt-3 rounded-[11px] py-3 text-center text-sm font-semibold text-white"
                 :style="{ background: accent }"
               >
-                Обменять на Kurso →
+                {{ t('widgets.exchangeCta') }}
               </div>
             </div>
           </div>
@@ -535,7 +561,9 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
                 /></svg
             ></span>
             <div>
-              <div class="text-xs text-ink-faint">{{ PAIR_LABEL }} · лучший курс</div>
+              <div class="text-xs text-ink-faint">
+                {{ PAIR_LABEL }} · {{ t('widgets.bestRateLabel') }}
+              </div>
               <div
                 class="tnum font-extrabold tracking-[-0.02em]"
                 :class="size === 'L' ? 'text-3xl' : 'text-2xl'"
@@ -545,7 +573,7 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
               <div class="mt-0.5 text-xs text-ink-muted">
                 <span class="text-warning">★</span>
                 <span class="tnum font-semibold">{{ bestRow?.ratingAvg?.toFixed(1) ?? '—' }}</span>
-                · обновлено на Kurso
+                · {{ t('widgets.updatedOnKurso') }}
               </div>
             </div>
           </div>
@@ -571,7 +599,7 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
                   ><span
                     v-if="card?.partner"
                     class="rounded-[5px] bg-brand/15 px-1.5 py-0.5 text-[10px] font-semibold text-brand-bright"
-                    >Партнёр</span
+                    >{{ t('widgets.partnerTag') }}</span
                   >
                 </div>
                 <div class="mt-0.5 text-xs text-ink-muted">
@@ -592,7 +620,7 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
                 v-if="showReserve && card?.reserve"
                 class="tnum text-right text-xs text-ink-faint"
               >
-                резерв<br /><span class="font-semibold text-ink-muted"
+                {{ t('widgets.reserve') }}<br /><span class="font-semibold text-ink-muted"
                   >{{ fmtCompact(parseFloat(card.reserve)) }} ₽</span
                 >
               </div>
@@ -602,7 +630,7 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
                 class="rounded-[11px] py-3 text-center text-sm font-semibold text-white"
                 :style="{ background: accent }"
               >
-                Перейти на сайт →
+                {{ t('widgets.goToSiteCta') }}
               </div>
             </div>
           </div>
@@ -633,7 +661,7 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
               </svg>
             </div>
             <div class="flex items-center gap-1.5 text-xs text-ink-faint">
-              <KStatusDot tone="success" :size="7" />обновлено только что · на Kurso
+              <KStatusDot tone="success" :size="7" />{{ t('widgets.updatedNow') }}
             </div>
           </div>
         </div>
@@ -644,14 +672,14 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
     <div class="overflow-hidden rounded-2xl border border-line bg-surface">
       <div class="flex flex-wrap items-center gap-1 border-b border-line px-3 pt-3">
         <button
-          v-for="t in CODE_TABS"
-          :key="t.key"
+          v-for="tab in CODE_TABS"
+          :key="tab.key"
           type="button"
           class="rounded-t-lg px-4 py-2.5 text-[13px] font-semibold transition-colors"
-          :class="codeTab === t.key ? 'bg-well text-ink' : 'text-ink-muted hover:text-ink'"
-          @click="codeTab = t.key"
+          :class="codeTab === tab.key ? 'bg-well text-ink' : 'text-ink-muted hover:text-ink'"
+          @click="codeTab = tab.key"
         >
-          {{ t.label }}
+          {{ tab.label }}
         </button>
         <button
           type="button"
@@ -671,7 +699,7 @@ const CODE_TABS: { key: typeof codeTab.value; label: string }[] = [
             <rect x="9" y="9" width="11" height="11" rx="2" />
             <path d="M5 15V5a2 2 0 0 1 2-2h10" />
           </svg>
-          {{ copied ? 'Скопировано' : 'Копировать' }}
+          {{ copied ? t('widgets.copied') : t('widgets.copy') }}
         </button>
       </div>
       <pre

@@ -15,6 +15,7 @@ interface Options {
   selected: Ref<string | null>
   userLoc: Ref<{ lat: number; lng: number } | null>
   fmtRate: (rate: string | null | undefined) => string
+  labels: { partner: string; route: string; go: string }
   onSelect: (slug: string) => void
   onRoute: (p: MapPoint) => void
   onGo: (p: MapPoint) => void
@@ -58,14 +59,14 @@ export function useMapboxMap(opts: Options) {
     const rating = p.ratingAvg != null ? p.ratingAvg.toFixed(1) : '—'
     wrap.innerHTML = `
       <div class="kmap-popup__head">
-        <div class="kmap-popup__name">${p.name}${p.partner ? '<span class="kmap-popup__tag">Партнёр</span>' : ''}</div>
+        <div class="kmap-popup__name">${p.name}${p.partner ? `<span class="kmap-popup__tag">${opts.labels.partner}</span>` : ''}</div>
         <div class="kmap-popup__rate">${opts.fmtRate(p.rate)}</div>
       </div>
       <div class="kmap-popup__meta">${p.address ?? ''}${p.hours ? ' · ' + p.hours : ''}</div>
       <div class="kmap-popup__meta">★ ${rating} · ${p.reviewsCount}</div>
       <div class="kmap-popup__actions">
-        <button class="kmap-btn kmap-btn--ghost" data-act="route">Маршрут</button>
-        <button class="kmap-btn kmap-btn--primary" data-act="go">Перейти</button>
+        <button class="kmap-btn kmap-btn--ghost" data-act="route">${opts.labels.route}</button>
+        <button class="kmap-btn kmap-btn--primary" data-act="go">${opts.labels.go}</button>
       </div>`
     wrap.querySelector('[data-act="route"]')?.addEventListener('click', () => opts.onRoute(p))
     wrap.querySelector('[data-act="go"]')?.addEventListener('click', () => opts.onGo(p))

@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 const route = useRoute()
+const { t } = useI18n()
 const { user, logout } = useAuth()
 const { activeCount } = useAlerts()
 
@@ -10,50 +13,51 @@ interface Item {
   badge?: () => number
 }
 
-// Icon inner-SVG (24×24, stroke=currentColor). Static/trusted content.
-const nav: Item[] = [
+// Icon inner-SVG (24×24, stroke=currentColor). Static/trusted content. Labels
+// resolve through i18n and re-evaluate on a language switch (computed).
+const nav = computed<Item[]>(() => [
   {
     to: '/account',
-    label: 'Обзор',
+    label: t('accountNav.overview'),
     icon: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
   },
   {
     to: '/account/alerts',
-    label: 'Алерты',
+    label: t('accountNav.alerts'),
     icon: '<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M10.5 20a1.8 1.8 0 0 0 3 0"/>',
     badge: () => activeCount.value,
   },
   {
     to: '/account/favorites',
-    label: 'Избранное',
+    label: t('accountNav.favorites'),
     icon: '<path d="M12 20s-6.5-4-9-8.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 9 4.5C18.5 16 12 20 12 20Z"/>',
   },
   {
     to: '/account/history',
-    label: 'История',
+    label: t('accountNav.history'),
     icon: '<circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/>',
   },
   {
     to: '/account/reviews',
-    label: 'Отзывы',
+    label: t('accountNav.reviews'),
     icon: '<path d="M21 15a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2Z"/>',
   },
   {
     to: '/account/partner',
-    label: 'Партнёрка',
+    label: t('accountNav.partner'),
     icon: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2.5 2-2.5 3.5M12 17h.01"/>',
   },
   {
     to: '/account/widgets',
-    label: 'Виджеты',
+    label: t('accountNav.widgets'),
     icon: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
   },
   {
     to: '/account/settings',
-    label: 'Настройки',
+    label: t('accountNav.settings'),
     icon: '<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.4 1a7 7 0 0 0-1.7-1L14.5 3h-5l-.3 2.5a7 7 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.5 2.4-1a7 7 0 0 0 1.7 1l.3 2.5h5l.3-2.5a7 7 0 0 0 1.7-1l2.4 1 2-3.5-2-1.5a7 7 0 0 0 .1-1Z"/>',
   },
-]
+])
 
 const isActive = (to: string) =>
   to === '/account' ? route.path === '/account' : route.path.startsWith(to)
@@ -74,7 +78,7 @@ function onLogout() {
       >
       <div class="min-w-0">
         <div class="truncate text-sm font-semibold text-ink">{{ user?.name ?? 'Гость' }}</div>
-        <div class="text-xs text-ink-faint">{{ user?.plan ?? '' }} план</div>
+        <div class="text-xs text-ink-faint">{{ t('accountNav.plan') }}</div>
       </div>
     </div>
 
@@ -126,7 +130,7 @@ function onLogout() {
       >
         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
       </svg>
-      Выйти
+      {{ t('accountNav.logout') }}
     </button>
   </aside>
 </template>

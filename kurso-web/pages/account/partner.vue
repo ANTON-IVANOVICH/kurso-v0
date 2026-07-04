@@ -6,7 +6,8 @@ import { computed, onMounted, ref } from 'vue'
 // Earnings are an honest estimate from real clicks until the confirmed-exchange
 // revshare pipeline lands.
 definePageMeta({ layout: 'account', middleware: 'auth' })
-useSeoMeta({ title: 'Партнёрка — Kurso' })
+const { t } = useI18n()
+useSeoMeta({ title: () => t('partner.seoTitle') })
 
 const { data, pending, error, load } = usePartner()
 const origin = useRequestURL().origin
@@ -34,21 +35,21 @@ async function copyLink() {
   }
 }
 function addTag() {
-  const t = newTag.value
+  const tag = newTag.value
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9_-]/g, '')
-  if (t && !allTags.value.includes(t)) customTags.value.push(t)
+  if (tag && !allTags.value.includes(tag)) customTags.value.push(tag)
   newTag.value = ''
   addingTag.value = false
-  if (t) activeTag.value = t
+  if (tag) activeTag.value = tag
 }
 
 // clicks-by-tag lookup for the "sources" panel
 const maxTagClicks = computed(() => Math.max(1, ...(data.value?.byTag ?? []).map((t) => t.clicks)))
 const maxDay = computed(() => Math.max(1, ...(data.value?.series ?? []).map((s) => s.clicks)))
 function tagLabel(tag: string) {
-  return tag ? `ref / ${tag}` : 'прямая ссылка'
+  return tag ? t('partner.refTag', { tag }) : t('partner.directLink')
 }
 
 onMounted(load)
@@ -58,21 +59,24 @@ onMounted(load)
   <div>
     <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">Партнёрская программа</h1>
-        <p class="mt-1 text-sm text-ink-faint">Зарабатывайте на переходах к обменникам</p>
+        <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">
+          {{ t('partner.title') }}
+        </h1>
+        <p class="mt-1 text-sm text-ink-faint">{{ t('partner.subtitle') }}</p>
       </div>
       <span
         class="inline-flex items-center gap-2 rounded-[10px] border border-line bg-surface px-3.5 py-2 text-[13px] text-ink-muted"
       >
-        <span class="tnum font-bold text-ink">{{ data?.revsharePct ?? 30 }}%</span> revshare ·
-        cookie <span class="tnum font-bold text-ink">{{ data?.cookieDays ?? 90 }}</span> дней
+        {{
+          t('partner.revshareNote', { pct: data?.revsharePct ?? 30, days: data?.cookieDays ?? 90 })
+        }}
       </span>
     </div>
 
     <!-- link + balance -->
     <div class="mb-4 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
       <div class="rounded-2xl border border-line bg-surface p-[18px]">
-        <div class="mb-2.5 text-[13px] text-ink-faint">Ваша партнёрская ссылка</div>
+        <div class="mb-2.5 text-[13px] text-ink-faint">{{ t('partner.yourLink') }}</div>
         <div class="flex flex-wrap items-center gap-2.5">
           <div
             class="tnum min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap rounded-xl border border-line bg-well px-[15px] py-3 text-sm text-ink-body"
@@ -97,12 +101,12 @@ onMounted(load)
               <rect x="9" y="9" width="11" height="11" rx="2" />
               <path d="M5 15V5a2 2 0 0 1 2-2h10" />
             </svg>
-            {{ copied ? 'Скопировано' : 'Копировать' }}
+            {{ copied ? t('partner.copied') : t('partner.copy') }}
           </button>
           <NuxtLink
             to="/account/widgets"
             class="rounded-xl border border-line-strong bg-surface-raised px-4 py-3 text-[13px] font-semibold text-ink transition-colors hover:border-[#3A4047]"
-            >Виджеты</NuxtLink
+            >{{ t('partner.widgets') }}</NuxtLink
           >
         </div>
         <div class="mt-3 flex flex-wrap gap-2">
@@ -116,26 +120,26 @@ onMounted(load)
             "
             @click="activeTag = ''"
           >
-            без метки
+            {{ t('partner.noTag') }}
           </button>
           <button
-            v-for="t in allTags"
-            :key="t"
+            v-for="tag in allTags"
+            :key="tag"
             type="button"
             class="rounded-lg border px-2.5 py-1.5 text-xs transition-colors"
             :class="
-              activeTag === t
+              activeTag === tag
                 ? 'border-brand bg-brand/10 text-brand-bright'
                 : 'border-line bg-well text-ink-muted hover:text-ink'
             "
-            @click="activeTag = t"
+            @click="activeTag = tag"
           >
-            UTM: {{ t }}
+            UTM: {{ tag }}
           </button>
           <template v-if="addingTag">
             <input
               v-model="newTag"
-              placeholder="метка"
+              :placeholder="t('partner.tagPlaceholder')"
               class="w-24 rounded-lg border border-line-strong bg-well px-2.5 py-1.5 text-xs text-ink focus:border-brand focus:outline-none"
               @keyup.enter="addTag"
               @blur="addTag"
@@ -147,7 +151,7 @@ onMounted(load)
             class="rounded-lg border border-dashed border-line-strong bg-well px-2.5 py-1.5 text-xs text-brand-bright"
             @click="addingTag = true"
           >
-            + метка
+            {{ t('partner.addTag') }}
           </button>
         </div>
       </div>
@@ -155,20 +159,20 @@ onMounted(load)
       <div
         class="flex flex-col rounded-2xl border border-brand/30 bg-[linear-gradient(160deg,rgba(46,125,242,0.16),rgba(46,125,242,0.04))] p-[18px]"
       >
-        <div class="mb-2 text-[13px] text-ink-muted">Накоплено (оценка)</div>
+        <div class="mb-2 text-[13px] text-ink-muted">{{ t('partner.accrued') }}</div>
         <div class="tnum text-[34px] font-extrabold tracking-[-0.02em] text-ink">
           ₽ {{ fmtNumber(data?.estimatedRub ?? 0, 0) }}
         </div>
         <div class="mt-1 text-xs text-ink-faint">
-          оценка по переходам · выплаты — после подтверждённых обменов
+          {{ t('partner.accruedNote') }}
         </div>
         <button
           type="button"
           disabled
           class="mt-auto cursor-not-allowed rounded-xl bg-brand/40 py-3 text-[15px] font-bold text-white/70"
-          title="Доступно после первых подтверждённых обменов"
+          :title="t('partner.payoutTitle')"
         >
-          Запросить выплату
+          {{ t('partner.requestPayout') }}
         </button>
       </div>
     </div>
@@ -176,28 +180,28 @@ onMounted(load)
     <!-- metrics -->
     <div class="mb-4 grid grid-cols-2 gap-3.5 lg:grid-cols-4">
       <div class="rounded-2xl border border-line bg-surface p-4">
-        <div class="mb-2 text-[13px] text-ink-muted">Клики</div>
+        <div class="mb-2 text-[13px] text-ink-muted">{{ t('partner.clicks') }}</div>
         <div class="tnum text-2xl font-bold text-ink">{{ fmtNumber(data?.clicks ?? 0, 0) }}</div>
-        <div class="mt-1 text-xs text-ink-faint">за 30 дней</div>
+        <div class="mt-1 text-xs text-ink-faint">{{ t('partner.clicksNote') }}</div>
       </div>
       <div class="rounded-2xl border border-line bg-surface p-4">
-        <div class="mb-2 text-[13px] text-ink-muted">Регистрации</div>
+        <div class="mb-2 text-[13px] text-ink-muted">{{ t('partner.registrations') }}</div>
         <div class="tnum text-2xl font-bold text-ink">
           {{ fmtNumber(data?.registrations ?? 0, 0) }}
         </div>
-        <div class="mt-1 text-xs text-ink-faint">по вашей ссылке</div>
+        <div class="mt-1 text-xs text-ink-faint">{{ t('partner.regNote') }}</div>
       </div>
       <div class="rounded-2xl border border-line bg-surface p-4">
-        <div class="mb-2 text-[13px] text-ink-muted">Обмены</div>
+        <div class="mb-2 text-[13px] text-ink-muted">{{ t('partner.exchanges') }}</div>
         <div class="tnum text-2xl font-bold text-ink-faint">—</div>
-        <div class="mt-1 text-xs text-ink-faint">учёт скоро</div>
+        <div class="mt-1 text-xs text-ink-faint">{{ t('partner.exchangesNote') }}</div>
       </div>
       <div class="rounded-2xl border border-line bg-surface p-4">
-        <div class="mb-2 text-[13px] text-ink-muted">Заработано (оценка)</div>
+        <div class="mb-2 text-[13px] text-ink-muted">{{ t('partner.earned') }}</div>
         <div class="tnum text-2xl font-bold text-ink">
           ₽{{ fmtNumber(data?.estimatedRub ?? 0, 0) }}
         </div>
-        <div class="mt-1 text-xs text-success-bright">по переходам</div>
+        <div class="mt-1 text-xs text-success-bright">{{ t('partner.earnedNote') }}</div>
       </div>
     </div>
 
@@ -205,12 +209,14 @@ onMounted(load)
       <!-- clicks chart -->
       <div class="rounded-2xl border border-line bg-surface p-[18px]">
         <div class="mb-4 flex items-center justify-between">
-          <span class="text-[15px] font-bold text-ink">Клики по дням</span>
-          <span class="text-xs text-ink-faint">30 дней</span>
+          <span class="text-[15px] font-bold text-ink">{{ t('partner.clicksByDay') }}</span>
+          <span class="text-xs text-ink-faint">{{ t('partner.days30') }}</span>
         </div>
-        <div v-if="pending" class="py-10 text-center text-sm text-ink-faint">Загрузка…</div>
+        <div v-if="pending" class="py-10 text-center text-sm text-ink-faint">
+          {{ t('partner.loading') }}
+        </div>
         <div v-else-if="error" class="py-10 text-center text-sm text-ink-faint">
-          Не удалось загрузить статистику
+          {{ t('partner.loadError') }}
         </div>
         <template v-else>
           <div class="flex h-[130px] items-end gap-[3px]">
@@ -228,14 +234,14 @@ onMounted(load)
             />
           </div>
           <p v-if="!data?.clicks" class="mt-3 text-center text-xs text-ink-faint">
-            Пока нет переходов — поделитесь ссылкой, чтобы начать.
+            {{ t('partner.noClicks') }}
           </p>
         </template>
       </div>
 
       <!-- sources by UTM -->
       <div class="rounded-2xl border border-line bg-surface p-[18px]">
-        <div class="mb-3.5 text-[15px] font-bold text-ink">Источники · UTM</div>
+        <div class="mb-3.5 text-[15px] font-bold text-ink">{{ t('partner.sources') }}</div>
         <div v-if="(data?.byTag ?? []).length" class="flex flex-col gap-3">
           <div v-for="t in data?.byTag ?? []" :key="t.tag" class="flex items-center gap-2.5">
             <span class="flex-1 truncate text-[13px] text-ink">{{ tagLabel(t.tag) }}</span>
@@ -249,7 +255,7 @@ onMounted(load)
           </div>
         </div>
         <p v-else class="py-6 text-center text-sm text-ink-faint">
-          Добавьте UTM-метку к ссылке, чтобы видеть источники.
+          {{ t('partner.addTagHint') }}
         </p>
       </div>
     </div>
