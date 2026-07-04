@@ -27,11 +27,20 @@ func (a *api) clickout(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Affiliate attribution: an explicit ?ref= wins, else the kurso_ref cookie the
+	// visitor picked up when they landed via a partner link.
+	refCode := strings.TrimSpace(r.URL.Query().Get("ref"))
+	if refCode == "" {
+		if c, err := r.Cookie("kurso_ref"); err == nil {
+			refCode = strings.TrimSpace(c.Value)
+		}
+	}
+
 	// Best-effort clickout log — never blocks the redirect on a logging failure.
 	if _, err := a.deps.DB.Exec(r.Context(), `
-		INSERT INTO clickouts (exchanger_id, direction_id, ip, user_agent, referer)
-		VALUES ($1::uuid, NULLIF($2,'')::uuid, NULLIF($3,'')::inet, NULLIF($4,''), NULLIF($5,''))`,
-		e.ID, directionID, clientIP(r), r.UserAgent(), r.Referer()); err != nil {
+		INSERT INTO clickouts (exchanger_id, direction_id, ref_code, ip, user_agent, referer)
+		VALUES ($1::uuid, NULLIF($2,'')::uuid, NULLIF($3,''), NULLIF($4,'')::inet, NULLIF($5,''), NULLIF($6,''))`,
+		e.ID, directionID, refCode, clientIP(r), r.UserAgent(), r.Referer()); err != nil {
 		a.deps.Log.Warn("clickout log failed", "exchanger", slug, "err", err)
 	}
 

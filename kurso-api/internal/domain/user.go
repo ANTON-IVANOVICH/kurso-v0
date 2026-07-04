@@ -8,3 +8,18 @@ type User struct {
 	DisplayName  *string
 	Status       string // active | blocked | deleted
 }
+
+// ReferralTag is per-UTM-tag clickout attribution for the affiliate cabinet.
+type ReferralTag struct {
+	Tag    string // suffix after the base code, or "" for the untagged link
+	Clicks int
+}
+
+// ReferralStats aggregates a partner's affiliate performance from real clickouts
+// and referred registrations.
+type ReferralStats struct {
+	Clicks        int
+	Registrations int
+	Series        []TrafficPoint
+	ByTag         []ReferralTag
+}

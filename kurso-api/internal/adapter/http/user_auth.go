@@ -85,6 +85,19 @@ func (a *api) userRegister(w http.ResponseWriter, r *http.Request) {
 		a.serverError(w, "create user", err)
 		return
 	}
+
+	// Affiliate attribution: if the visitor arrived via a partner link, credit the
+	// referrer (base code before any ".tag" suffix). Best-effort.
+	if c, cerr := r.Cookie("kurso_ref"); cerr == nil && c.Value != "" {
+		baseCode := c.Value
+		if i := strings.IndexByte(baseCode, '.'); i > 0 {
+			baseCode = baseCode[:i]
+		}
+		if refID, ok, rerr := a.deps.Store.UserIDByReferralCode(r.Context(), baseCode); rerr == nil && ok {
+			_ = a.deps.Store.SetReferrer(r.Context(), u.ID, refID)
+		}
+	}
+	_, _ = a.deps.Store.EnsureReferralCode(r.Context(), u.ID)
 	tokens, err := a.deps.UserAuth.IssueFor(auth.Account{ID: u.ID, Email: u.Email, Role: "user"})
 	if err != nil {
 		a.serverError(w, "issue tokens", err)

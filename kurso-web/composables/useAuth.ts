@@ -82,5 +82,44 @@ export function useAuth() {
     user.value = null
   }
 
-  return { user, isAuthenticated, login, register, logout }
+  // ensureToken returns a valid access token, refreshing from the httpOnly cookie
+  // when the in-memory one is missing/expired (client-only — SSR has no token).
+  async function ensureToken(): Promise<string | null> {
+    if (accessToken) return accessToken
+    try {
+      const res = await $fetch<AuthPayload>('/api/v1/auth/refresh', {
+        baseURL: base,
+        method: 'POST',
+        credentials: 'include',
+      })
+      setAccessToken(res.token)
+      if (!user.value) user.value = toAccountUser(res.user)
+      return res.token
+    } catch {
+      return null
+    }
+  }
+
+  // authedGet fetches a bearer-protected endpoint, transparently refreshing once
+  // on a 401. Client-side only (the access token lives in memory).
+  async function authedGet<T>(path: string): Promise<T> {
+    let token = getAccessToken() ?? (await ensureToken())
+    const call = (t: string | null) =>
+      $fetch<T>(path, {
+        baseURL: base,
+        credentials: 'include',
+        headers: t ? { Authorization: `Bearer ${t}` } : {},
+      })
+    try {
+      return await call(token)
+    } catch (e) {
+      if ((e as { status?: number; statusCode?: number })?.statusCode === 401) {
+        token = await ensureToken()
+        if (token) return await call(token)
+      }
+      throw e
+    }
+  }
+
+  return { user, isAuthenticated, login, register, logout, ensureToken, authedGet }
 }

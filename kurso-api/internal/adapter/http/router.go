@@ -82,6 +82,7 @@ func NewRouter(d Deps) http.Handler {
 				r.Group(func(r chi.Router) {
 					r.Use(a.requireUser)
 					r.Get("/me", a.userMe)
+					r.Get("/partner", a.userPartnerOverview)
 				})
 			})
 		})
