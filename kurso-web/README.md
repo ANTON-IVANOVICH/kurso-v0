@@ -16,17 +16,17 @@ pnpm install
 
 ## Команды
 
-| Команда         | Описание                                                              |
-| --------------- | -------------------------------------------------------------------- |
-| `pnpm dev`      | Запуск дев-сервера на `http://localhost:3000`                        |
-| `pnpm build`    | Продакшн-сборка приложения                                            |
-| `pnpm preview`  | Локальный предпросмотр продакшн-сборки                               |
-| `pnpm generate` | Статическая генерация сайта (Nuxt)                                    |
-| `pnpm openapi`  | Генерация TypeScript-типов из `../api/openapi.yaml` в `types/api.d.ts` |
-| `pnpm lint`     | Проверка кода ESLint                                                  |
-| `pnpm lint:fix` | Проверка и авто-исправление ESLint                                    |
-| `pnpm format`   | Форматирование кода Prettier                                          |
-| `pnpm typecheck`| Проверка типов через `vue-tsc`                                        |
+| Команда          | Описание                                                               |
+| ---------------- | ---------------------------------------------------------------------- |
+| `pnpm dev`       | Запуск дев-сервера на `http://localhost:3000`                          |
+| `pnpm build`     | Продакшн-сборка приложения                                             |
+| `pnpm preview`   | Локальный предпросмотр продакшн-сборки                                 |
+| `pnpm generate`  | Статическая генерация сайта (Nuxt)                                     |
+| `pnpm openapi`   | Генерация TypeScript-типов из `../api/openapi.yaml` в `types/api.d.ts` |
+| `pnpm lint`      | Проверка кода ESLint                                                   |
+| `pnpm lint:fix`  | Проверка и авто-исправление ESLint                                     |
+| `pnpm format`    | Форматирование кода Prettier                                           |
+| `pnpm typecheck` | Проверка типов через `vue-tsc`                                         |
 
 ## Типы API
 
