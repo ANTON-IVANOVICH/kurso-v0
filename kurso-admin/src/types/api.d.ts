@@ -51,11 +51,101 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Список валют
-         * @description Справочник валют. Полноценно реализуется на этапе 1.
-         */
+        /** Список валют */
         get: operations["listCurrencies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/directions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Список направлений */
+        get: operations["listDirections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exchangers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Список обменников */
+        get: operations["listExchangers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exchangers/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Карточка обменника */
+        get: operations["getExchanger"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rates/{direction}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Курсы по направлению
+         * @description Текущие курсы обменников по направлению, лучший — первым.
+         */
+        get: operations["getRates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rates/{direction}/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Поток обновлений курсов (SSE)
+         * @description Server-Sent Events. Каждое событие `rates` содержит актуальный
+         *     массив `RateRow` по направлению. Курсы обновляются на сервере
+         *     и пушатся сюда без опроса.
+         */
+        get: operations["streamRates"];
         put?: never;
         post?: never;
         delete?: never;
@@ -138,9 +228,16 @@ export interface components {
             fromCurrencyId: string;
             /** Format: uuid */
             toCurrencyId: string;
-            /** @example btc-to-usdt-trc20 */
+            /** @example usdt-tinkoff */
             slug: string;
-            /** @default false */
+            /** @example USDT */
+            fromCode: string;
+            /** @example Tether */
+            fromName: string;
+            /** @example TINKOFF */
+            toCode: string;
+            /** @example Тинькофф */
+            toName: string;
             isPopular: boolean;
         };
         /** @enum {string} */
@@ -148,15 +245,55 @@ export interface components {
         Exchanger: {
             /** Format: uuid */
             id: string;
-            /** @example fastchange */
+            /** @example cryptobridge */
             slug: string;
-            /** @example FastChange */
+            /** @example CryptoBridge */
             name: string;
             status: components["schemas"]["ExchangerStatus"];
+            /** @description Есть партнёрское размещение (реферальная ссылка) */
+            partner: boolean;
+            isVerified: boolean;
+            reviewsCount: number;
             /** Format: float */
             ratingAvg?: number | null;
             /** Format: uri */
             websiteUrl?: string | null;
+            /** Format: uri */
+            logoUrl?: string | null;
+            description?: string | null;
+            /** @description Суммарный резерв по активным курсам (decimal-строкой), null если курсов нет */
+            reserveTotal?: string | null;
+            /** @description Число направлений с активным курсом */
+            directionsCount: number;
+            /** @description Торгуемые исходные валюты (коды), напр. USDT, BTC */
+            assets: string[];
+            /** @description Год добавления обменника на Kurso */
+            onSince: number;
+        };
+        /** @description Курс конкретного обменника по направлению (денормализовано для выдачи). */
+        RateRow: {
+            /** Format: uuid */
+            exchangerId: string;
+            exchangerSlug: string;
+            exchangerName: string;
+            partner: boolean;
+            /** Format: float */
+            ratingAvg?: number | null;
+            reviewsCount: number;
+            /**
+             * @description Курс decimal-строкой
+             * @example 81.20
+             */
+            rate: string;
+            reserve?: string | null;
+            minAmount?: string | null;
+            maxAmount?: string | null;
+            /** Format: date-time */
+            fetchedAt: string;
+        };
+        RatesResponse: {
+            direction: components["schemas"]["Direction"];
+            rates: components["schemas"]["RateRow"][];
         };
         Rate: {
             /** Format: uuid */
@@ -262,6 +399,119 @@ export interface operations {
                 };
             };
             default: components["responses"]["Error"];
+        };
+    };
+    listDirections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Список направлений */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Direction"][];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listExchangers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Список обменников */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Exchanger"][];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getExchanger: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Обменник */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Exchanger"];
+                };
+            };
+            404: components["responses"]["Error"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getRates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Слаг направления, например usdt-tinkoff */
+                direction: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Курсы по направлению */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatesResponse"];
+                };
+            };
+            404: components["responses"]["Error"];
+            default: components["responses"]["Error"];
+        };
+    };
+    streamRates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                direction: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Поток событий SSE */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
         };
     };
 }
