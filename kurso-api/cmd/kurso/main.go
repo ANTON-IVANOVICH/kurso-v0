@@ -86,9 +86,10 @@ func run() error {
 	go ticker.Run(ctx)
 	log.Info("rate runner started", "interval", cfg.Rates.TickInterval)
 
-	// Auth: one service per identity store (admin + end user), distinct secrets.
+	// Auth: one service per identity store (admin + end user + merchant), distinct secrets.
 	adminAuth := auth.NewService(adminAuthRepo{st}, cfg.Admin.JWTSecret, cfg.Admin.AccessTTL, cfg.Admin.RefreshTTL)
 	userAuth := auth.NewService(userAuthRepo{st}, cfg.Admin.UserJWTSecret, cfg.Admin.AccessTTL, cfg.Admin.RefreshTTL)
+	partnerAuth := auth.NewService(merchantAuthRepo{st}, cfg.Partner.JWTSecret, cfg.Admin.AccessTTL, cfg.Admin.RefreshTTL)
 
 	// Ensure a seed administrator exists so a fresh DB can log in.
 	if hash, err := auth.HashPassword(cfg.Admin.SeedPassword); err != nil {
@@ -99,6 +100,16 @@ func run() error {
 		log.Info("admin account ensured", "email", cfg.Admin.SeedEmail)
 	}
 
+	// Ensure a seed merchant representative for the seed exchanger so the
+	// partner cabinet has a working login on a fresh database.
+	if hash, err := auth.HashPassword(cfg.Partner.SeedPassword); err != nil {
+		log.Warn("hash seed partner password failed", "err", err)
+	} else if err := st.EnsureExchangerUser(ctx, cfg.Partner.SeedExchanger, cfg.Partner.SeedEmail, hash, "owner"); err != nil {
+		log.Warn("seed partner user failed, continuing", "err", err)
+	} else {
+		log.Info("partner account ensured", "email", cfg.Partner.SeedEmail, "exchanger", cfg.Partner.SeedExchanger)
+	}
+
 	// Inbound adapter: HTTP router.
 	router := httpapi.NewRouter(httpapi.Deps{
 		Log:            log,
@@ -107,6 +118,7 @@ func run() error {
 		Svc:            svc,
 		Auth:           adminAuth,
 		UserAuth:       userAuth,
+		PartnerAuth:    partnerAuth,
 		Store:          st,
 		AllowedOrigins: cfg.HTTP.AllowedOrigins,
 		CookieSecure:   cfg.Admin.CookieSecure,
@@ -157,4 +169,17 @@ func (r userAuthRepo) AccountByEmail(ctx context.Context, email string) (auth.Ac
 }
 func (r userAuthRepo) TouchLogin(ctx context.Context, id string) error {
 	return r.st.TouchUserLogin(ctx, id)
+}
+
+type merchantAuthRepo struct{ st *store.Store }
+
+func (r merchantAuthRepo) AccountByEmail(ctx context.Context, email string) (auth.Account, error) {
+	u, err := r.st.ExchangerUserByEmail(ctx, email)
+	if err != nil {
+		return auth.Account{}, err
+	}
+	return auth.Account{ID: u.ID, Email: u.Email, Role: u.Role, PasswordHash: u.PasswordHash, Status: u.Status}, nil
+}
+func (r merchantAuthRepo) TouchLogin(ctx context.Context, id string) error {
+	return r.st.TouchExchangerUserLogin(ctx, id)
 }

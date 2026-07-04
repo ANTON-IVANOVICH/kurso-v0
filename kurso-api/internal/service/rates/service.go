@@ -79,6 +79,18 @@ func (s *Service) RatesByDirection(ctx context.Context, dir domain.Direction) ([
 	return rows, nil
 }
 
+// RepublishDirection re-reads a direction's rates, drops the cache, and pushes
+// the fresh rows to the SSE hub. Called after an out-of-band write (e.g. a
+// merchant manually refreshing a feed) so public readers see it immediately.
+func (s *Service) RepublishDirection(ctx context.Context, dir domain.Direction) {
+	fresh, err := s.store.RatesByDirection(ctx, dir.ID)
+	if err != nil {
+		return
+	}
+	s.invalidate(ctx, dir.Slug)
+	s.hub.Publish(dir.Slug, fresh)
+}
+
 // invalidate drops the cached rates for a direction (called after a fresh tick).
 func (s *Service) invalidate(ctx context.Context, slug string) {
 	if s.rdb != nil {

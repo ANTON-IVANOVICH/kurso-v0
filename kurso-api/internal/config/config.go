@@ -14,13 +14,24 @@ import (
 
 // Config is the fully-resolved application configuration.
 type Config struct {
-	Env   string
-	HTTP  HTTPConfig
-	DB    DBConfig
-	Redis RedisConfig
-	Log   LogConfig
-	Rates RatesConfig
-	Admin AdminConfig
+	Env     string
+	HTTP    HTTPConfig
+	DB      DBConfig
+	Redis   RedisConfig
+	Log     LogConfig
+	Rates   RatesConfig
+	Admin   AdminConfig
+	Partner PartnerConfig
+}
+
+// PartnerConfig holds merchant-cabinet (partner.kurso.io) authentication. The
+// seed representative is created on boot for the seed exchanger, so a fresh
+// database has a working merchant login.
+type PartnerConfig struct {
+	JWTSecret     string
+	SeedEmail     string
+	SeedPassword  string
+	SeedExchanger string // slug of the exchanger the seed representative owns
 }
 
 // AdminConfig holds admin authentication settings. The seed account is created
@@ -90,7 +101,7 @@ func Load() (Config, error) {
 			IdleTimeout:     getDuration("HTTP_IDLE_TIMEOUT", 60*time.Second),
 			ShutdownTimeout: getDuration("HTTP_SHUTDOWN_TIMEOUT", 10*time.Second),
 			AllowedOrigins: splitCSV(getenv("CORS_ALLOWED_ORIGINS",
-				"http://localhost:3000,http://localhost:5173,http://localhost:5174")),
+				"http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175")),
 		},
 		Rates: RatesConfig{
 			TickInterval: getDuration("RATES_TICK_INTERVAL", 5*time.Second),
@@ -104,6 +115,12 @@ func Load() (Config, error) {
 			CookieSecure:  env != "dev" && env != "development" && env != "local",
 			CookieDomain:  getenv("AUTH_COOKIE_DOMAIN", ""),
 			UserJWTSecret: getenv("USER_JWT_SECRET", "dev-user-secret-change-in-production"),
+		},
+		Partner: PartnerConfig{
+			JWTSecret:     getenv("PARTNER_JWT_SECRET", "dev-partner-secret-change-in-production"),
+			SeedEmail:     getenv("PARTNER_SEED_EMAIL", "partner@kurso.io"),
+			SeedPassword:  getenv("PARTNER_SEED_PASSWORD", "partner12345"),
+			SeedExchanger: getenv("PARTNER_SEED_EXCHANGER", "cryptobridge"),
 		},
 		DB: DBConfig{
 			URL: getenv("DATABASE_URL", "postgres://kurso:kurso@localhost:5432/kurso?sslmode=disable"),

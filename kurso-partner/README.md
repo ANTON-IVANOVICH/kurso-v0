@@ -1,11 +1,22 @@
 # kurso-partner
 
-Кабинет обменников Kurso (`partner.kurso.io`) — SPA на **Vite + Vue 3 + TypeScript**.
+Кабинет обменника Kurso (`partner.kurso.io`) — SPA на **Vite + Vue 3 + TypeScript +
+PrimeVue**. Плотный десктопный кабинет: главная с метриками, курсы и состояние
+фида, ответы на отзывы, статистика трафика, профиль, жалобы и биллинг.
 
 Часть монорепозитория Kurso. Единый источник контракта с API — `../api/openapi.yaml`,
-из которого генерируются типы в `src/types/api.d.ts`.
+из которого генерируются типы в `src/types/api.d.ts` (доменные ответы кабинета
+описаны в `src/types/models.ts`).
 
-> Этап 0: чистая база проекта. Pinia, vue-router и PrimeVue пока не подключены.
+## Авторизация
+
+Как в админке: access-токен живёт только в памяти, refresh — в httpOnly-cookie
+(`kurso_partner_rt`), которую читает сервер. Данные кабинета читаются через
+Pinia Colada. Тестовый доступ: `partner@kurso.io` / `partner12345` (обменник
+CryptoBridge).
+
+По умолчанию SPA обращается к API на `http://localhost:8080`
+(переопределяется через `VITE_API_BASE`).
 
 ## Требования
 

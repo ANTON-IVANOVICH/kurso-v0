@@ -26,6 +26,7 @@ type Deps struct {
 	Svc            *rates.Service
 	Auth           *auth.Service // admin identity
 	UserAuth       *auth.Service // end-user identity
+	PartnerAuth    *auth.Service // exchanger-representative identity
 	Store          *store.Store
 	AllowedOrigins []string
 	// CookieSecure marks the refresh cookie Secure (production/HTTPS).
@@ -100,6 +101,30 @@ func NewRouter(d Deps) http.Handler {
 			r.Patch("/reviews/{id}", a.adminModerateReview)
 			r.Get("/reports", a.adminListReports)
 			r.Patch("/reports/{id}", a.adminResolveReport)
+		})
+	})
+
+	// Merchant cabinet API (partner.kurso.io). Login is public; the cabinet
+	// endpoints need a valid merchant JWT and resolve the representative's
+	// exchanger via RequireMerchant.
+	r.Route("/partner", func(r chi.Router) {
+		r.Use(middleware.Timeout(15 * time.Second))
+		r.Post("/auth/login", a.partnerLogin)
+		r.Post("/auth/refresh", a.partnerRefresh) // reads the httpOnly refresh cookie
+		r.Post("/auth/logout", a.partnerLogout)
+		r.Group(func(r chi.Router) {
+			r.Use(a.requireMerchant)
+			r.Get("/auth/me", a.partnerMe)
+			r.Get("/dashboard", a.merchantDashboard)
+			r.Get("/rates", a.merchantRates)
+			r.Post("/rates/{directionId}/refresh", a.merchantRefreshRate)
+			r.Get("/reviews", a.merchantReviews)
+			r.Post("/reviews/{id}/reply", a.merchantReplyReview)
+			r.Get("/traffic", a.merchantTraffic)
+			r.Get("/profile", a.merchantProfile)
+			r.Patch("/profile", a.merchantUpdateProfile)
+			r.Get("/complaints", a.merchantComplaints)
+			r.Get("/billing", a.merchantBilling)
 		})
 	})
 

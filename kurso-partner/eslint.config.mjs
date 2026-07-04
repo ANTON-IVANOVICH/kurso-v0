@@ -1,19 +1,27 @@
 import pluginVue from 'eslint-plugin-vue'
 import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript'
-import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
+import prettierConfig from '@vue/eslint-config-prettier'
 
-// Flat config: eslint-plugin-vue + typescript-eslint (via @vue/eslint-config-typescript)
-// + @vue/eslint-config-prettier (turns off rules that conflict with Prettier).
 export default defineConfigWithVueTs(
   {
-    name: 'app/files-to-lint',
+    name: 'kurso-partner/files-to-lint',
     files: ['**/*.{ts,mts,tsx,vue}'],
   },
   {
-    name: 'app/files-to-ignore',
+    name: 'kurso-partner/ignores',
     ignores: ['dist', 'node_modules', 'src/types/api.d.ts'],
   },
   pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,
-  skipFormatting,
+  prettierConfig,
+  {
+    name: 'kurso-partner/rules',
+    rules: {
+      // Allow intentionally-unused args/vars when prefixed with `_`.
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' },
+      ],
+    },
+  },
 )
