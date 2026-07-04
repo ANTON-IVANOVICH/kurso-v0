@@ -1,15 +1,26 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import type { AccountUser } from '~/composables/useAuth'
 
-// Client login scaffold. Telegram flow switches to an inline "waiting for
-// confirmation" state (design: Auth & Onboarding). No backend wiring yet.
+// Client login. The account backend (JWT / Telegram / Google) isn't built yet,
+// so signing in establishes a real client session (cookie) and returns you to
+// where you were headed — the flows and states match the Auth & Onboarding design.
 definePageMeta({ layout: 'auth' })
 useSeoMeta({ title: 'Вход — Kurso' })
+
+const { login } = useAuth()
+const route = useRoute()
 
 const mode = ref<'form' | 'telegram'>('form')
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
+
+function finish(via: AccountUser['via']) {
+  login({ email: via === 'email' ? email.value : undefined, via })
+  const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/account'
+  navigateTo(redirect)
+}
 </script>
 
 <template>
@@ -59,6 +70,7 @@ const showPassword = ref(false)
         <button
           type="button"
           class="flex flex-1 items-center justify-center gap-2.5 rounded-2xl border border-line-strong bg-surface py-3 text-sm font-semibold text-ink transition-colors hover:border-[#3A4047]"
+          @click="finish('google')"
         >
           <span
             class="flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-extrabold text-[#1A1A1A]"
@@ -69,6 +81,7 @@ const showPassword = ref(false)
         <button
           type="button"
           class="flex flex-1 items-center justify-center gap-2.5 rounded-2xl border border-line-strong bg-surface py-3 text-sm font-semibold text-ink transition-colors hover:border-[#3A4047]"
+          @click="finish('apple')"
         >
           <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
             <path
@@ -160,7 +173,7 @@ const showPassword = ref(false)
       <button type="button" class="text-[13px] text-brand-bright">Забыли пароль?</button>
     </div>
 
-    <KButton block size="lg" class="!rounded-2xl">Войти</KButton>
+    <KButton block size="lg" class="!rounded-2xl" @click="finish('email')">Войти</KButton>
 
     <div class="mt-[18px] text-center text-sm text-ink-faint">
       Нет аккаунта?
@@ -256,7 +269,7 @@ const showPassword = ref(false)
       <KStatusDot tone="success" pulse :size="7" />Ждём подтверждения…
     </div>
 
-    <KButton block size="lg" class="!rounded-2xl">
+    <KButton block size="lg" class="!rounded-2xl" @click="finish('telegram')">
       Открыть @kurso_bot
       <svg
         width="16"

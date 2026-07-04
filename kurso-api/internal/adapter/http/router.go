@@ -9,6 +9,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/service/auth"
 	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/service/rates"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -22,7 +23,10 @@ type Deps struct {
 	DB             *pgxpool.Pool
 	Redis          *redis.Client
 	Svc            *rates.Service
+	Auth           *auth.Service
 	AllowedOrigins []string
+	// CookieSecure marks the refresh cookie Secure (production/HTTPS).
+	CookieSecure bool
 }
 
 // api binds handlers to their dependencies.
@@ -59,7 +63,20 @@ func NewRouter(d Deps) http.Handler {
 		r.Get("/rates/{direction}/stream", a.streamRates)
 	})
 
-	// Outbound click + referral redirect (Stage 1.9).
+	// Admin API (admin.kurso.io). Login is public; everything else needs a valid
+	// admin JWT via RequireAdmin.
+	r.Route("/admin", func(r chi.Router) {
+		r.Use(middleware.Timeout(15 * time.Second))
+		r.Post("/auth/login", a.adminLogin)
+		r.Post("/auth/refresh", a.adminRefresh) // reads the httpOnly refresh cookie
+		r.Post("/auth/logout", a.adminLogout)
+		r.Group(func(r chi.Router) {
+			r.Use(a.requireAdmin)
+			r.Get("/auth/me", a.adminMe)
+		})
+	})
+
+	// Outbound click + referral redirect.
 	r.Get("/go/{slug}", a.clickout)
 
 	return r
@@ -78,6 +95,9 @@ func (a *api) cors(next http.Handler) http.Handler {
 			w.Header().Add("Vary", "Origin")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			// Credentialed so the admin/partner refresh cookie is accepted; the
+			// reflected specific origin (never "*") keeps this valid.
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
 		}
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)

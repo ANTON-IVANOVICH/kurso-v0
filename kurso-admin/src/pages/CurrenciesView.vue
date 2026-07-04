@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import { useCatalogStore } from '../stores/catalog'
+import { useCatalog } from '../composables/useCatalog'
 import type { CurrencyKind } from '../types/models'
 import { MAP_QUEUE, type MapCandidate } from '../lib/fixtures'
 import PageHeader from '../components/ui/PageHeader.vue'
@@ -15,7 +15,7 @@ import InputIcon from 'primevue/inputicon'
 import InputText from 'primevue/inputtext'
 import Toast from 'primevue/toast'
 
-const catalog = useCatalogStore()
+const catalog = useCatalog()
 const toast = useToast()
 
 const search = ref('')

@@ -22,6 +22,11 @@ const props = withDefaults(
     delta: string
     deltaTone?: DeltaTone
     href?: string
+    // Identity for real favorites/history wiring (optional so other call sites
+    // that render a static card keep working).
+    slug?: string
+    directionSlug?: string
+    pair?: string
   }>(),
   {
     state: 'normal',
@@ -30,8 +35,36 @@ const props = withDefaults(
     note: undefined,
     deltaTone: undefined,
     href: undefined,
+    slug: undefined,
+    directionSlug: undefined,
+    pair: undefined,
   },
 )
+
+// Favorites + clickout history are real: the heart toggles membership and every
+// "Перейти" logs the jump — both feed the account section.
+const { isFavorite, toggle } = useFavorites()
+const { record } = useHistory()
+const favorited = computed(() => (props.slug ? isFavorite(props.slug) : false))
+function onFav() {
+  if (props.slug)
+    toggle({
+      slug: props.slug,
+      name: props.name,
+      initials: props.initials,
+      color: props.avatarColor,
+    })
+}
+function onGo() {
+  if (props.slug && props.directionSlug)
+    record({
+      pair: props.pair ?? props.name,
+      exchanger: props.name,
+      slug: props.slug,
+      directionSlug: props.directionSlug,
+      amount: props.receive,
+    })
+}
 
 const accentCls = computed(
   () => ({ best: 'bg-brand', normal: 'bg-line-strong', stale: 'bg-[#8A6A2B]' })[props.state],
@@ -92,6 +125,29 @@ const btnVariant = computed(() => (props.state === 'best' ? 'primary' : 'seconda
             {{ name }}
             <KBadge v-if="partner" tone="brand">{{ t('exchangers.partner') }}</KBadge>
             <span v-if="note" class="text-[11px] text-warning">{{ note }}</span>
+            <button
+              v-if="slug"
+              type="button"
+              :aria-label="favorited ? 'Убрать из избранного' : 'В избранное'"
+              class="ml-0.5 transition-colors"
+              :class="favorited ? 'text-danger' : 'text-ink-ghost hover:text-danger'"
+              @click="onFav"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                :fill="favorited ? 'currentColor' : 'none'"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M12 20s-6.5-4-9-8.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 9 4.5C18.5 16 12 20 12 20Z"
+                />
+              </svg>
+            </button>
           </div>
           <div class="mt-1.5 flex flex-wrap items-center gap-2 text-[13px]" :class="ratingCls">
             <span :class="starCls">★</span>
@@ -125,7 +181,7 @@ const btnVariant = computed(() => (props.state === 'best' ? 'primary' : 'seconda
         </div>
       </div>
 
-      <KButton :variant="btnVariant" size="lg" class="flex-none" :href="href">{{
+      <KButton :variant="btnVariant" size="lg" class="flex-none" :href="href" @click="onGo">{{
         t('home.card.go')
       }}</KButton>
     </div>
@@ -143,6 +199,29 @@ const btnVariant = computed(() => (props.state === 'best' ? 'primary' : 'seconda
             {{ name }}
             <KBadge v-if="partner" tone="brand">{{ t('exchangers.partner') }}</KBadge>
             <span v-if="note" class="text-[10px] text-warning">{{ note }}</span>
+            <button
+              v-if="slug"
+              type="button"
+              :aria-label="favorited ? 'Убрать из избранного' : 'В избранное'"
+              class="ml-auto transition-colors"
+              :class="favorited ? 'text-danger' : 'text-ink-ghost'"
+              @click="onFav"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                :fill="favorited ? 'currentColor' : 'none'"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M12 20s-6.5-4-9-8.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 9 4.5C18.5 16 12 20 12 20Z"
+                />
+              </svg>
+            </button>
           </div>
           <div class="mt-[3px] flex items-center gap-1.5 text-xs" :class="ratingCls">
             <span :class="starCls">★</span>
@@ -179,7 +258,7 @@ const btnVariant = computed(() => (props.state === 'best' ? 'primary' : 'seconda
         <span v-if="extraTag" :class="[chipBase, chipBg]">{{ extraTag }}</span>
       </div>
 
-      <KButton :variant="btnVariant" size="lg" block :href="href">{{
+      <KButton :variant="btnVariant" size="lg" block :href="href" @click="onGo">{{
         t('home.card.goMobile')
       }}</KButton>
     </div>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useCatalogStore } from '../stores/catalog'
+import { useCatalog } from '../composables/useCatalog'
 import type { Exchanger, ExchangerStatus } from '../types/models'
 import { toNum, fmtCompact } from '../lib/format'
 import PageHeader from '../components/ui/PageHeader.vue'
@@ -18,7 +18,7 @@ import Menu from 'primevue/menu'
 import Rating from 'primevue/rating'
 import type { MenuItem } from 'primevue/menuitem'
 
-const catalog = useCatalogStore()
+const catalog = useCatalog()
 const router = useRouter()
 
 const search = ref('')

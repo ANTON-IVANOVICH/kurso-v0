@@ -19,6 +19,9 @@ interface Exchanger {
   delta: string
   deltaTone: DeltaTone
   href?: string
+  slug?: string
+  directionSlug?: string
+  pair?: string
 }
 
 // Static fallback shown during first render and when the API is unreachable.
@@ -88,7 +91,7 @@ const fallbackExchangers: Exchanger[] = [
 // --- live rates (shared with the calculator via useCalculator), with fallback ---
 // `ranked` is the current direction's exchangers, best-first, already converted
 // at the entered amount — so the top card always matches the calculator's best.
-const { ranked, getCode, receiveUnit, directionSlug } = useCalculator()
+const { ranked, give, get, getCode, receiveUnit, directionSlug } = useCalculator()
 const { filter, sort } = useHomeFilters()
 const { t } = useI18n()
 const apiBase = useApiBase()
@@ -147,6 +150,9 @@ const liveExchangers = computed<Exchanger[] | null>(() => {
       delta: isBest ? t('home.card.bestRate') : `−${fmtNumber(maxReceive - receive, dec)} ${unit}`,
       deltaTone: isBest ? 'success' : 'danger',
       href: `${apiBase}/go/${row.exchangerSlug}${directionSlug.value ? `?direction=${directionSlug.value}` : ''}`,
+      slug: row.exchangerSlug,
+      directionSlug: directionSlug.value || undefined,
+      pair: `${give.value.code} → ${get.value.name}`,
     }
   })
 })

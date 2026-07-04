@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { NAV, type NavItem, type BadgeTone } from '../../lib/nav'
-import { useCatalogStore } from '../../stores/catalog'
+import { useCatalog } from '../../composables/useCatalog'
 import { useAuthStore } from '../../stores/auth'
 import UiIcon from '../ui/UiIcon.vue'
 
@@ -9,7 +9,7 @@ defineProps<{ open: boolean }>()
 const emit = defineEmits<{ navigate: [] }>()
 
 const route = useRoute()
-const catalog = useCatalogStore()
+const catalog = useCatalog()
 const auth = useAuthStore()
 
 function isActive(to: string): boolean {

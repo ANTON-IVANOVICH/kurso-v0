@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
-import { useCatalogStore } from '../stores/catalog'
+import { useCatalog } from '../composables/useCatalog'
 import { METRICS, PARSERS, TOP_REVENUE, ATTENTION, type HealthTone } from '../lib/fixtures'
 import { fmtCompact, fmtRub, fmtInt } from '../lib/format'
 import { exchangerAvatar } from '../lib/avatar'
@@ -13,7 +13,7 @@ import Column from 'primevue/column'
 import Tag from 'primevue/tag'
 import Chip from 'primevue/chip'
 
-const catalog = useCatalogStore()
+const catalog = useCatalog()
 
 const exchangersValue = computed(() =>
   catalog.exchangers.length ? String(catalog.exchangers.length) : '128',

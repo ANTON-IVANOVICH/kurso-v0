@@ -6,7 +6,12 @@ import { ref } from 'vue'
 definePageMeta({ layout: false })
 useSeoMeta({ title: 'Знакомство — Kurso' })
 
+const { login } = useAuth()
 const step = ref(1)
+function pick(via: 'telegram' | 'google' | 'email') {
+  login({ via })
+  step.value = 4
+}
 const rates = [
   {
     name: 'CryptoBridge',
@@ -122,7 +127,7 @@ const finish = () => navigateTo('/')
           <button
             type="button"
             class="mb-3 flex w-full items-center justify-center gap-2.5 rounded-2xl bg-brand py-4 text-base font-bold text-white transition-colors hover:bg-brand-hover"
-            @click="step = 4"
+            @click="pick('telegram')"
           >
             <svg
               width="20"
@@ -142,7 +147,7 @@ const finish = () => navigateTo('/')
             <button
               type="button"
               class="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-line-strong bg-surface py-3 text-sm font-semibold text-ink transition-colors hover:border-[#3A4047]"
-              @click="step = 4"
+              @click="pick('google')"
             >
               <span
                 class="flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-extrabold text-[#1A1A1A]"
@@ -153,7 +158,7 @@ const finish = () => navigateTo('/')
             <button
               type="button"
               class="flex flex-1 items-center justify-center rounded-2xl border border-line-strong bg-surface py-3 text-sm font-semibold text-ink-muted transition-colors hover:border-[#3A4047]"
-              @click="step = 4"
+              @click="pick('email')"
             >
               Email
             </button>

@@ -2,6 +2,7 @@
 const route = useRoute()
 const { openSearch } = useSearchOverlay()
 const { openNotifications } = useNotifications()
+const { user } = useAuth()
 const { t } = useI18n()
 const nav = [
   { key: 'nav.exchange', to: '/' },
@@ -76,7 +77,24 @@ const isActive = (to: string) => (to === '/' ? route.path === '/' : route.path.s
           </svg>
         </button>
 
-        <KButton pill class="hidden md:inline-flex" @click="navigateTo('/login')">{{
+        <!-- mobile account avatar (logged in) -->
+        <NuxtLink
+          v-if="user"
+          to="/account"
+          aria-label="Личный кабинет"
+          class="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#3A4452] text-[13px] font-bold text-white md:hidden"
+          >{{ user.initials }}</NuxtLink
+        >
+
+        <!-- desktop: account avatar when logged in, else the login button -->
+        <NuxtLink
+          v-if="user"
+          to="/account"
+          aria-label="Личный кабинет"
+          class="hidden h-[38px] w-[38px] items-center justify-center rounded-full bg-[#3A4452] text-[13px] font-bold text-white transition-transform hover:scale-105 md:flex"
+          >{{ user.initials }}</NuxtLink
+        >
+        <KButton v-else pill class="hidden md:inline-flex" @click="navigateTo('/login')">{{
           t('header.login')
         }}</KButton>
       </div>

@@ -1,14 +1,23 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import type { AccountUser } from '~/composables/useAuth'
 
-// Client registration scaffold (design: Auth & Onboarding). No backend wiring yet.
+// Client registration (design: Auth & Onboarding). Creating the account starts a
+// real client session and drops you into the cabinet; the account backend
+// (email confirmation, real OAuth) slots in behind login() later.
 definePageMeta({ layout: 'auth' })
 useSeoMeta({ title: 'Регистрация — Kurso' })
 
+const { login } = useAuth()
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const agreed = ref(false)
+
+function finish(via: AccountUser['via']) {
+  login({ email: via === 'email' ? email.value : undefined, via })
+  navigateTo('/account')
+}
 
 // Lightweight password strength meter (0–3 filled segments).
 const strength = computed(() => {
@@ -52,6 +61,7 @@ const strengthColor = computed(
       <button
         type="button"
         class="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-brand py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-brand-hover"
+        @click="finish('telegram')"
       >
         <svg
           width="19"
@@ -74,6 +84,7 @@ const strengthColor = computed(
         <button
           type="button"
           class="flex flex-1 items-center justify-center gap-2.5 rounded-2xl border border-line-strong bg-surface py-3 text-sm font-semibold text-ink transition-colors hover:border-[#3A4047]"
+          @click="finish('google')"
         >
           <span
             class="flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-extrabold text-[#1A1A1A]"
@@ -84,6 +95,7 @@ const strengthColor = computed(
         <button
           type="button"
           class="flex flex-1 items-center justify-center gap-2.5 rounded-2xl border border-line-strong bg-surface py-3 text-sm font-semibold text-ink transition-colors hover:border-[#3A4047]"
+          @click="finish('apple')"
         >
           <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
             <path
@@ -213,7 +225,9 @@ const strengthColor = computed(
       </span>
     </label>
 
-    <KButton block size="lg" class="!rounded-2xl" :disabled="!agreed">Создать аккаунт</KButton>
+    <KButton block size="lg" class="!rounded-2xl" :disabled="!agreed" @click="finish('email')"
+      >Создать аккаунт</KButton
+    >
 
     <!-- trust -->
     <div

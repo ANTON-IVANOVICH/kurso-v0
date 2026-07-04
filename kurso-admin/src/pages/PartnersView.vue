@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useCatalogStore } from '../stores/catalog'
+import { useCatalog } from '../composables/useCatalog'
 import type { Exchanger } from '../types/models'
 import { toNum, fmtCompact } from '../lib/format'
 import PageHeader from '../components/ui/PageHeader.vue'
@@ -11,7 +11,7 @@ import Column from 'primevue/column'
 import Tag from 'primevue/tag'
 import Message from 'primevue/message'
 
-const catalog = useCatalogStore()
+const catalog = useCatalog()
 const router = useRouter()
 
 const partners = computed(() => catalog.exchangers.filter((e) => e.partner))

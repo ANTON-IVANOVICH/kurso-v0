@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
-import { useCatalogStore } from '../stores/catalog'
+import { useCatalog } from '../composables/useCatalog'
 import { api } from '../lib/api'
 import type { Exchanger, ExchangerStatus } from '../types/models'
 import { PARSER_LOGS, TEST_RUN } from '../lib/fixtures'
@@ -25,7 +25,7 @@ import Toast from 'primevue/toast'
 
 const route = useRoute()
 const router = useRouter()
-const catalog = useCatalogStore()
+const catalog = useCatalog()
 const toast = useToast()
 
 const isNew = computed(() => route.name === 'exchanger-new')
@@ -80,7 +80,6 @@ function hydrate(e: Exchanger) {
 
 onMounted(async () => {
   if (isNew.value) return
-  await catalog.load()
   const local = catalog.findExchanger(slug.value)
   if (local) {
     hydrate(local)

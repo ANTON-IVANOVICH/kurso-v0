@@ -1,19 +1,17 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useCatalogStore } from '../../stores/catalog'
 import { useAuthStore } from '../../stores/auth'
 import AdminSidebar from './AdminSidebar.vue'
 import UiIcon from '../ui/UiIcon.vue'
 
-const catalog = useCatalogStore()
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 
 const drawerOpen = ref(false)
 
-onMounted(() => catalog.load())
+// Colada fetches the catalogue lazily when the sidebar/pages read it.
 
 // Close the mobile drawer whenever the route changes.
 watch(

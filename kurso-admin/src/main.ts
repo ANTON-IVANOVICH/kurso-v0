@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import { PiniaColada } from '@pinia/colada'
 import PrimeVue from 'primevue/config'
 import ToastService from 'primevue/toastservice'
 import ConfirmationService from 'primevue/confirmationservice'
@@ -15,20 +16,13 @@ const app = createApp(App)
 const pinia = createPinia()
 
 app.use(pinia)
-
-// Re-hydrate any persisted session before the router guard runs, so a refresh
-// on a protected page doesn't bounce to /login.
-useAuthStore(pinia).restore()
+app.use(PiniaColada) // async cache for admin data queries
 
 app.use(PrimeVue, {
   theme: {
     preset: KursoPreset,
     options: {
-      // The admin is dark-only; <html class="dark"> keeps this always matched.
       darkModeSelector: '.dark',
-      // PrimeVue sits between Tailwind's preflight and its utilities (see
-      // style.css @layer order) so preflight can't strip component padding but
-      // utility classes still win for deliberate overrides.
       cssLayer: { name: 'primevue', order: 'tailwind-base, primevue, tailwind-utilities' },
     },
   },
@@ -37,5 +31,11 @@ app.use(ToastService)
 app.use(ConfirmationService)
 app.directive('tooltip', Tooltip)
 
-app.use(router)
-app.mount('#app')
+// Revive the session from the httpOnly refresh cookie, THEN wire the router so
+// the first navigation guard already sees the correct auth state.
+useAuthStore(pinia)
+  .restore()
+  .finally(() => {
+    app.use(router)
+    app.mount('#app')
+  })

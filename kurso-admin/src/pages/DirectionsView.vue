@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useCatalogStore } from '../stores/catalog'
+import { useCatalog } from '../composables/useCatalog'
 import PageHeader from '../components/ui/PageHeader.vue'
 import UiIcon from '../components/ui/UiIcon.vue'
 import DataTable from 'primevue/datatable'
@@ -11,7 +11,7 @@ import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import InputText from 'primevue/inputtext'
 
-const catalog = useCatalogStore()
+const catalog = useCatalog()
 const search = ref('')
 const popularOnly = ref(false)
 

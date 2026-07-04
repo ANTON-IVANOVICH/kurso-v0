@@ -21,6 +21,7 @@ import (
 	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/platform/postgres"
 	redisclient "github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/platform/redis"
 	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/platform/server"
+	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/service/auth"
 	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/service/rates"
 )
 
@@ -85,13 +86,25 @@ func run() error {
 	go ticker.Run(ctx)
 	log.Info("rate runner started", "interval", cfg.Rates.TickInterval)
 
+	// Admin auth: ensure a seed administrator exists so a fresh DB can log in.
+	authSvc := auth.NewService(st, cfg.Admin.JWTSecret, cfg.Admin.AccessTTL, cfg.Admin.RefreshTTL)
+	if hash, err := auth.HashPassword(cfg.Admin.SeedPassword); err != nil {
+		log.Warn("hash seed admin password failed", "err", err)
+	} else if err := st.EnsureAdmin(ctx, cfg.Admin.SeedEmail, hash, "superadmin"); err != nil {
+		log.Warn("seed admin failed, continuing", "err", err)
+	} else {
+		log.Info("admin account ensured", "email", cfg.Admin.SeedEmail)
+	}
+
 	// Inbound adapter: HTTP router.
 	router := httpapi.NewRouter(httpapi.Deps{
 		Log:            log,
 		DB:             pool,
 		Redis:          rdb,
 		Svc:            svc,
+		Auth:           authSvc,
 		AllowedOrigins: cfg.HTTP.AllowedOrigins,
+		CookieSecure:   cfg.Admin.CookieSecure,
 	})
 
 	srv := server.New(server.Config{

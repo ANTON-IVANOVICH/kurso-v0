@@ -115,8 +115,8 @@ async function submit() {
         />
 
         <p class="mt-4 text-center text-[11px] leading-relaxed text-ink-fainter">
-          Локальная авторизация для разработки. Реальный вход по JWT + TOTP появится с бэкендом
-          админки.
+          Тестовый доступ: <span class="tnum text-ink-faint">admin@kurso.io</span> · пароль
+          <span class="tnum text-ink-faint">admin12345</span>
         </p>
       </form>
     </div>

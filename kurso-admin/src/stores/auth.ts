@@ -1,22 +1,21 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { setAuthToken } from '../lib/api'
+import { api, setAccessToken } from '../lib/api'
 
-// Admin session. The admin auth backend (`POST /admin/auth/login`, JWT + TOTP,
-// RequireAdmin middleware) is not built yet, so this is a local scaffold: it
-// accepts any email/password so the console is usable in development, persists a
-// placeholder token, and keeps the exact surface (`login`, `logout`, bearer
-// token wiring) the real endpoint will slot into. `login()` already accepts a
-// TOTP code so the form is contract-ready.
-
-const TOKEN_KEY = 'kurso_admin_token'
-const USER_KEY = 'kurso_admin_user'
+// Admin session. Nothing is persisted in localStorage: the access token lives in
+// memory (see api.ts) and the session survives reloads through the httpOnly
+// refresh cookie — `restore()` exchanges it for a fresh access token on boot.
 
 export interface AdminUser {
   name: string
   email: string
   role: 'superadmin' | 'moderator'
   initials: string
+}
+
+interface AuthPayload {
+  token: string
+  admin: { id: string; email: string; role: 'superadmin' | 'moderator' }
 }
 
 function initialsFor(email: string): string {
@@ -26,46 +25,50 @@ function initialsFor(email: string): string {
   return chars.toUpperCase()
 }
 
+function userFrom(admin: AuthPayload['admin']): AdminUser {
+  return {
+    name: admin.email.split('@')[0] ?? 'admin',
+    email: admin.email,
+    role: admin.role,
+    initials: initialsFor(admin.email),
+  }
+}
+
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string | null>(null)
   const user = ref<AdminUser | null>(null)
-  const isAuthenticated = computed(() => token.value !== null)
+  const ready = ref(false) // true once the boot-time restore attempt has settled
+  const isAuthenticated = computed(() => user.value !== null)
 
-  /** Re-hydrate a persisted session on app boot. */
-  function restore() {
-    const t = localStorage.getItem(TOKEN_KEY)
-    const u = localStorage.getItem(USER_KEY)
-    if (t && u) {
-      token.value = t
-      user.value = JSON.parse(u) as AdminUser
-      setAuthToken(t)
+  /** Boot: try to revive the session from the refresh cookie. */
+  async function restore() {
+    try {
+      const res = await api.post<AuthPayload>('/admin/auth/refresh')
+      setAccessToken(res.token)
+      user.value = userFrom(res.admin)
+    } catch {
+      setAccessToken(null)
+      user.value = null
+    } finally {
+      ready.value = true
     }
   }
 
-  async function login(email: string, _password: string, _otp?: string) {
-    // Placeholder auth — swap for `api.post('/admin/auth/login', …)` once the
-    // backend exists. We keep the signature (incl. TOTP) so nothing else changes.
-    const t = `dev.${btoa(email).replace(/=/g, '')}.${Date.now().toString(36)}`
-    const u: AdminUser = {
-      name: email.split('@')[0] ?? 'admin',
-      email,
-      role: 'superadmin',
-      initials: initialsFor(email),
-    }
-    token.value = t
-    user.value = u
-    setAuthToken(t)
-    localStorage.setItem(TOKEN_KEY, t)
-    localStorage.setItem(USER_KEY, JSON.stringify(u))
+  async function login(email: string, password: string, otp?: string) {
+    // Throws ApiError on bad credentials (401) — the login view shows the message.
+    const res = await api.post<AuthPayload>('/admin/auth/login', { email, password, otp })
+    setAccessToken(res.token)
+    user.value = userFrom(res.admin)
   }
 
-  function logout() {
-    token.value = null
+  async function logout() {
+    try {
+      await api.post('/admin/auth/logout')
+    } catch {
+      /* clearing locally regardless */
+    }
+    setAccessToken(null)
     user.value = null
-    setAuthToken(null)
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(USER_KEY)
   }
 
-  return { token, user, isAuthenticated, restore, login, logout }
+  return { user, ready, isAuthenticated, restore, login, logout }
 })

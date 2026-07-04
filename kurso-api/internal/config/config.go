@@ -20,6 +20,18 @@ type Config struct {
 	Redis RedisConfig
 	Log   LogConfig
 	Rates RatesConfig
+	Admin AdminConfig
+}
+
+// AdminConfig holds admin authentication settings. The seed account is created
+// on boot if absent, so a fresh database has a working admin login.
+type AdminConfig struct {
+	JWTSecret    string
+	AccessTTL    time.Duration // short-lived, kept in the client's memory
+	RefreshTTL   time.Duration // long-lived, delivered as an httpOnly cookie
+	SeedEmail    string
+	SeedPassword string
+	CookieSecure bool // mark the refresh cookie Secure (production/HTTPS)
 }
 
 // HTTPConfig holds HTTP server tuning.
@@ -72,10 +84,19 @@ func Load() (Config, error) {
 			WriteTimeout:    getDuration("HTTP_WRITE_TIMEOUT", 15*time.Second),
 			IdleTimeout:     getDuration("HTTP_IDLE_TIMEOUT", 60*time.Second),
 			ShutdownTimeout: getDuration("HTTP_SHUTDOWN_TIMEOUT", 10*time.Second),
-			AllowedOrigins:  splitCSV(getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000")),
+			AllowedOrigins: splitCSV(getenv("CORS_ALLOWED_ORIGINS",
+				"http://localhost:3000,http://localhost:5173,http://localhost:5174")),
 		},
 		Rates: RatesConfig{
 			TickInterval: getDuration("RATES_TICK_INTERVAL", 5*time.Second),
+		},
+		Admin: AdminConfig{
+			JWTSecret:    getenv("ADMIN_JWT_SECRET", "dev-admin-secret-change-in-production"),
+			AccessTTL:    getDuration("ADMIN_ACCESS_TTL", 15*time.Minute),
+			RefreshTTL:   getDuration("ADMIN_REFRESH_TTL", 30*24*time.Hour),
+			SeedEmail:    getenv("ADMIN_SEED_EMAIL", "admin@kurso.io"),
+			SeedPassword: getenv("ADMIN_SEED_PASSWORD", "admin12345"),
+			CookieSecure: env != "dev" && env != "development" && env != "local",
 		},
 		DB: DBConfig{
 			URL: getenv("DATABASE_URL", "postgres://kurso:kurso@localhost:5432/kurso?sslmode=disable"),
