@@ -50,45 +50,6 @@ function fmtReserve(s: string | null | undefined): string {
   return s ? `${fmtCompact(parseFloat(s))} ₽` : '—'
 }
 
-// static, illustrative rating distribution + sample reviews (no reviews API yet)
-const dist = [
-  { star: 5, pct: 90 },
-  { star: 4, pct: 8 },
-  { star: 3, pct: 3 },
-  { star: 2, pct: 2 },
-  { star: 1, pct: 1 },
-]
-const reviewFilters = [
-  'detail.rvAll',
-  'detail.rvPositive',
-  'detail.rvNegative',
-  'detail.rvWithReply',
-]
-const reviews = [
-  {
-    initials: 'ИК',
-    color: '#3A4452',
-    name: 'Иван К.',
-    when: '2 дня назад',
-    stars: 5,
-    pair: 'USDT → Тинькофф',
-    amount: '≈ 120 000 ₽',
-    text: 'Обмен прошёл за 7 минут, курс точно как на сайте, без скрытых комиссий. Уже третий раз меняю здесь — всё стабильно.',
-    reply: 'Спасибо за доверие, Иван! Рады, что всё прошло гладко — ждём снова.',
-  },
-  {
-    initials: 'М',
-    color: '#5B3FA0',
-    name: 'Мария',
-    when: 'неделю назад',
-    stars: 4,
-    pair: 'BTC → Наличные',
-    amount: '≈ 80 000 ₽',
-    text: 'Всё ок, но пришлось немного подождать оператора в чате. По курсу и резерву претензий нет.',
-    reply: '',
-  },
-]
-
 useSeoMeta({
   title: () => `${exchanger.value?.name ?? t('detail.breadcrumb')} · Kurso`,
   description: () => `${exchanger.value?.name ?? ''} — ${t('detail.allDirections')} · Kurso`,
@@ -393,103 +354,8 @@ useSeoMeta({
         </div>
       </div>
 
-      <!-- reviews (from variant 1) -->
-      <div class="rounded-[20px] border border-line bg-surface p-[22px]">
-        <div class="mb-5 flex items-center justify-between">
-          <span class="text-[17px] font-bold">{{ t('detail.reviews') }}</span>
-          <button
-            type="button"
-            class="rounded-[10px] bg-brand px-[18px] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-hover"
-          >
-            {{ t('detail.leaveReview') }}
-          </button>
-        </div>
-
-        <!-- summary -->
-        <div class="mb-5 flex items-center gap-7 border-b border-line pb-5">
-          <div class="flex-none text-center">
-            <div class="tnum text-[48px] font-extrabold leading-none tracking-[-0.02em]">
-              {{ exchanger.ratingAvg != null ? exchanger.ratingAvg.toFixed(1) : '—' }}
-            </div>
-            <div class="mt-1.5 text-[15px] tracking-widest text-warning-deep">★★★★★</div>
-            <div class="tnum mt-1.5 text-xs text-ink-faint">
-              {{ exchanger.reviewsCount }} {{ plural(exchanger.reviewsCount, 'reviews') }}
-            </div>
-          </div>
-          <div class="flex flex-1 flex-col gap-[7px]">
-            <div v-for="d in dist" :key="d.star" class="flex items-center gap-2.5">
-              <span class="w-3.5 text-xs text-ink-faint">{{ d.star }}</span>
-              <div class="h-[7px] flex-1 overflow-hidden rounded bg-surface-raised">
-                <div
-                  class="h-full rounded"
-                  :class="
-                    d.star >= 4 ? 'bg-success' : d.star === 3 ? 'bg-warning-deep' : 'bg-danger'
-                  "
-                  :style="{ width: `${d.pct}%` }"
-                />
-              </div>
-              <span class="tnum w-8 text-right text-xs text-ink-faint">{{ d.pct }}%</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- filters -->
-        <div class="scrollx -mx-1 mb-[18px] flex gap-2 overflow-x-auto px-1">
-          <span
-            v-for="(f, i) in reviewFilters"
-            :key="f"
-            class="whitespace-nowrap rounded-full px-3.5 py-[7px] text-[13px]"
-            :class="
-              i === 0
-                ? 'bg-brand font-medium text-white'
-                : 'border border-line-strong bg-surface-raised text-ink-muted'
-            "
-            >{{ t(f) }}</span
-          >
-        </div>
-
-        <!-- review cards -->
-        <div
-          v-for="(rv, i) in reviews"
-          :key="rv.name"
-          class="border-line pb-[18px]"
-          :class="i < reviews.length - 1 ? 'mb-[18px] border-b' : ''"
-        >
-          <div class="mb-2.5 flex items-center gap-3">
-            <span
-              class="flex h-10 w-10 flex-none items-center justify-center rounded-full text-sm font-bold text-white"
-              :style="{ background: rv.color }"
-              >{{ rv.initials }}</span
-            >
-            <div class="flex-1">
-              <div class="text-[15px] font-semibold">{{ rv.name }}</div>
-              <div class="text-xs text-ink-faint">{{ rv.when }}</div>
-            </div>
-            <span class="text-sm tracking-widest text-warning-deep"
-              >{{ '★'.repeat(rv.stars)
-              }}<span class="text-line-strong">{{ '★'.repeat(5 - rv.stars) }}</span></span
-            >
-          </div>
-          <div class="mb-2.5 flex flex-wrap gap-2">
-            <span class="rounded-[7px] bg-surface-raised px-2.5 py-1 text-xs text-ink-muted">{{
-              rv.pair
-            }}</span>
-            <span class="tnum rounded-[7px] bg-surface-raised px-2.5 py-1 text-xs text-ink-muted">{{
-              rv.amount
-            }}</span>
-          </div>
-          <p class="mb-3 text-sm leading-relaxed text-ink-bright">{{ rv.text }}</p>
-          <div
-            v-if="rv.reply"
-            class="rounded-r-xl border border-l-[3px] border-line border-l-brand bg-well px-4 py-3"
-          >
-            <div class="mb-1 text-[13px] font-semibold text-brand-bright">
-              {{ t('detail.reply') }} {{ exchanger.name }}
-            </div>
-            <div class="text-[13px] leading-relaxed text-ink-muted">{{ rv.reply }}</div>
-          </div>
-        </div>
-      </div>
+      <!-- reviews -->
+      <ReviewsBlock :slug="slug" :exchanger-name="exchanger.name" />
     </template>
 
     <!-- loading -->

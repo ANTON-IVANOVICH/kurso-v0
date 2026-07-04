@@ -9,6 +9,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/adapter/store"
 	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/service/auth"
 	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/service/rates"
 	"github.com/go-chi/chi/v5"
@@ -24,6 +25,7 @@ type Deps struct {
 	Redis          *redis.Client
 	Svc            *rates.Service
 	Auth           *auth.Service
+	Store          *store.Store
 	AllowedOrigins []string
 	// CookieSecure marks the refresh cookie Secure (production/HTTPS).
 	CookieSecure bool
@@ -57,6 +59,9 @@ func NewRouter(d Deps) http.Handler {
 			r.Get("/directions", a.listDirections)
 			r.Get("/exchangers", a.listExchangers)
 			r.Get("/exchangers/{slug}", a.getExchanger)
+			r.Get("/exchangers/{slug}/reviews", a.listReviews)
+			r.Post("/exchangers/{slug}/reviews", a.createReview)
+			r.Post("/reviews/{id}/report", a.reportReview)
 			r.Get("/rates/{direction}", a.getRates)
 		})
 		// SSE stream is long-lived — it must not be wrapped by a request timeout.
@@ -73,6 +78,10 @@ func NewRouter(d Deps) http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Use(a.requireAdmin)
 			r.Get("/auth/me", a.adminMe)
+			r.Get("/reviews", a.adminListReviews)
+			r.Patch("/reviews/{id}", a.adminModerateReview)
+			r.Get("/reports", a.adminListReports)
+			r.Patch("/reports/{id}", a.adminResolveReport)
 		})
 	})
 

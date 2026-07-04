@@ -103,6 +103,7 @@ func run() error {
 		Redis:          rdb,
 		Svc:            svc,
 		Auth:           authSvc,
+		Store:          st,
 		AllowedOrigins: cfg.HTTP.AllowedOrigins,
 		CookieSecure:   cfg.Admin.CookieSecure,
 	})
