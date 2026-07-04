@@ -1,31 +1,21 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive } from 'vue'
 
 definePageMeta({ layout: 'account', middleware: 'auth' })
 useSeoMeta({ title: 'Настройки — Kurso' })
 
-const { user, login, logout } = useAuth()
-
-const name = ref(user.value?.name ?? '')
-const saved = ref(false)
-function saveProfile() {
-  if (!name.value.trim()) return
-  // Persists to the session cookie (real, survives reloads).
-  login({ name: name.value.trim(), email: user.value?.email, via: user.value?.via })
-  saved.value = true
-  setTimeout(() => (saved.value = false), 2000)
-}
+const { user, logout } = useAuth()
 
 // Notification channels (functional in-session; server-side prefs land with the backend).
 const channels = reactive({ telegram: true, email: false, push: false })
 
-function signOut() {
-  logout()
+async function signOut() {
+  await logout()
   navigateTo('/')
 }
-function removeAccount() {
+async function removeAccount() {
   if (confirm('Удалить аккаунт и все алерты? Действие необратимо.')) {
-    logout()
+    await logout()
     navigateTo('/')
   }
 }
@@ -39,26 +29,19 @@ function removeAccount() {
     <!-- profile -->
     <section class="mb-5 rounded-2xl border border-line bg-surface p-5">
       <div class="mb-4 text-[15px] font-bold text-ink">Профиль</div>
-      <label class="mb-3 block">
+      <div class="mb-3">
         <span class="mb-1.5 block text-xs text-ink-faint">Имя</span>
-        <input
-          v-model="name"
-          class="w-full rounded-2xl border border-line bg-well px-[15px] py-3 text-[15px] text-ink outline-none focus:border-brand"
-        />
-      </label>
-      <label class="mb-4 block">
+        <div class="rounded-2xl border border-line bg-well px-[15px] py-3 text-[15px] text-ink">
+          {{ user?.name ?? '—' }}
+        </div>
+      </div>
+      <div>
         <span class="mb-1.5 block text-xs text-ink-faint">Email</span>
         <div
           class="tnum rounded-2xl border border-line bg-well px-[15px] py-3 text-[15px] text-ink-muted"
         >
           {{ user?.email ?? '—' }}
         </div>
-      </label>
-      <div class="flex items-center gap-3">
-        <KButton size="sm" @click="saveProfile">Сохранить</KButton>
-        <span v-if="saved" class="flex items-center gap-1.5 text-[13px] text-success-bright">
-          <KStatusDot tone="success" :size="6" />Сохранено
-        </span>
       </div>
     </section>
 

@@ -1,8 +1,10 @@
-// Package auth is the admin authentication use case: password verification
-// (bcrypt) and a short-lived access / long-lived refresh JWT pair (HS256). The
-// access token is returned to the client (kept in memory); the refresh token is
-// delivered as an httpOnly cookie by the HTTP adapter and exchanged for fresh
-// access tokens here. It depends only on an AdminRepo port.
+// Package auth is the authentication use case shared by admins and end users:
+// password verification (bcrypt) and a short-lived access / long-lived refresh
+// JWT pair (HS256). The access token is returned to the client (kept in memory);
+// the refresh token is delivered as an httpOnly cookie by the HTTP adapter and
+// exchanged for fresh access tokens here. It depends only on an Account Repo
+// port, so one Service type serves both the admin and the user identity stores
+// (two instances, distinct secrets).
 package auth
 
 import (
@@ -10,7 +12,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ANTON-IVANOVICH/kurso-v0/kurso-api/internal/domain"
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -28,13 +29,23 @@ const (
 	typeRefresh = "refresh"
 )
 
-// AdminRepo is the storage port the auth service needs.
-type AdminRepo interface {
-	AdminByEmail(ctx context.Context, email string) (domain.Admin, error)
-	TouchAdminLogin(ctx context.Context, id string) error
+// Account is the minimal identity the auth service needs, independent of whether
+// it is an admin or an end user.
+type Account struct {
+	ID           string
+	Email        string
+	Role         string
+	PasswordHash string
+	Status       string // must be "active" to authenticate
 }
 
-// Claims is the JWT payload for an admin token.
+// Repo looks up an account by email and records a successful login.
+type Repo interface {
+	AccountByEmail(ctx context.Context, email string) (Account, error)
+	TouchLogin(ctx context.Context, id string) error
+}
+
+// Claims is the JWT payload for an issued token.
 type Claims struct {
 	jwt.RegisteredClaims
 	Typ   string `json:"typ"`
@@ -48,64 +59,67 @@ type Tokens struct {
 	Refresh string
 }
 
-// Service issues and validates admin tokens.
+// Service issues and validates tokens for one identity store.
 type Service struct {
-	repo       AdminRepo
+	repo       Repo
 	secret     []byte
 	accessTTL  time.Duration
 	refreshTTL time.Duration
 }
 
 // NewService builds the auth service.
-func NewService(repo AdminRepo, secret string, accessTTL, refreshTTL time.Duration) *Service {
+func NewService(repo Repo, secret string, accessTTL, refreshTTL time.Duration) *Service {
 	return &Service{repo: repo, secret: []byte(secret), accessTTL: accessTTL, refreshTTL: refreshTTL}
 }
 
 // RefreshTTL exposes the refresh lifetime so the HTTP adapter can size the cookie.
 func (s *Service) RefreshTTL() time.Duration { return s.refreshTTL }
 
-// HashPassword returns a bcrypt hash suitable for admins.password_hash.
+// HashPassword returns a bcrypt hash suitable for a password_hash column.
 func HashPassword(password string) (string, error) {
 	h, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(h), err
 }
 
-// Login verifies credentials and returns a fresh token pair plus the admin.
-// `otp` is accepted for forward-compatibility with TOTP 2FA (seeded admins have
-// it disabled).
-func (s *Service) Login(ctx context.Context, email, password, _ string) (Tokens, domain.Admin, error) {
-	a, err := s.repo.AdminByEmail(ctx, email)
+// Login verifies credentials and returns a fresh token pair plus the account.
+// `otp` is accepted for forward-compatibility with TOTP 2FA.
+func (s *Service) Login(ctx context.Context, email, password, _ string) (Tokens, Account, error) {
+	a, err := s.repo.AccountByEmail(ctx, email)
 	if err != nil {
 		_ = bcrypt.CompareHashAndPassword(
 			[]byte("$2a$10$C6UzMDM.H6dfI/f/IKcEeO3fL7lHnJh5m9Q3qYcU8b6b3W2t3k2eK"),
 			[]byte(password),
 		)
-		return Tokens{}, domain.Admin{}, ErrInvalidCredentials
+		return Tokens{}, Account{}, ErrInvalidCredentials
 	}
-	if a.Status != "active" {
-		return Tokens{}, domain.Admin{}, ErrInvalidCredentials
+	if a.Status != "active" || a.PasswordHash == "" {
+		return Tokens{}, Account{}, ErrInvalidCredentials
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(a.PasswordHash), []byte(password)); err != nil {
-		return Tokens{}, domain.Admin{}, ErrInvalidCredentials
+		return Tokens{}, Account{}, ErrInvalidCredentials
 	}
 
 	tokens, err := s.issue(a)
 	if err != nil {
-		return Tokens{}, domain.Admin{}, err
+		return Tokens{}, Account{}, err
 	}
-	_ = s.repo.TouchAdminLogin(ctx, a.ID)
+	_ = s.repo.TouchLogin(ctx, a.ID)
 	return tokens, a, nil
 }
 
-// Refresh validates a refresh token and mints a rotated token pair. The returned
-// claims describe the admin (id/email/role) for a /me-style response.
+// IssueFor mints a token pair for an account without a password check — used
+// right after registration or a verified third-party (Telegram/OAuth) login.
+func (s *Service) IssueFor(a Account) (Tokens, error) {
+	return s.issue(a)
+}
+
+// Refresh validates a refresh token and mints a rotated token pair.
 func (s *Service) Refresh(refreshToken string) (Tokens, *Claims, error) {
 	claims, err := s.parse(refreshToken)
 	if err != nil || claims.Typ != typeRefresh {
 		return Tokens{}, nil, ErrInvalidToken
 	}
-	a := domain.Admin{ID: claims.Subject, Email: claims.Email, Role: domain.AdminRole(claims.Role)}
-	tokens, err := s.issue(a)
+	tokens, err := s.issue(Account{ID: claims.Subject, Email: claims.Email, Role: claims.Role})
 	if err != nil {
 		return Tokens{}, nil, err
 	}
@@ -124,7 +138,20 @@ func (s *Service) ParseAccess(token string) (*Claims, error) {
 	return claims, nil
 }
 
-func (s *Service) issue(a domain.Admin) (Tokens, error) {
+// ParseRefresh validates a refresh token WITHOUT rotating it — used by the SSR
+// session check to resolve the current user cheaply.
+func (s *Service) ParseRefresh(token string) (*Claims, error) {
+	claims, err := s.parse(token)
+	if err != nil {
+		return nil, err
+	}
+	if claims.Typ != typeRefresh {
+		return nil, ErrInvalidToken
+	}
+	return claims, nil
+}
+
+func (s *Service) issue(a Account) (Tokens, error) {
 	access, err := s.sign(a, typeAccess, s.accessTTL)
 	if err != nil {
 		return Tokens{}, err
@@ -136,17 +163,17 @@ func (s *Service) issue(a domain.Admin) (Tokens, error) {
 	return Tokens{Access: access, Refresh: refresh}, nil
 }
 
-func (s *Service) sign(a domain.Admin, typ string, ttl time.Duration) (string, error) {
+func (s *Service) sign(a Account, typ string, ttl time.Duration) (string, error) {
 	now := time.Now()
 	claims := Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   a.ID,
-			Issuer:    "kurso-admin",
+			Issuer:    "kurso",
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
 		},
 		Typ:   typ,
-		Role:  string(a.Role),
+		Role:  a.Role,
 		Email: a.Email,
 	}
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(s.secret)

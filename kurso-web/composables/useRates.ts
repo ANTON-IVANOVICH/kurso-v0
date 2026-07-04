@@ -1,31 +1,50 @@
-import { useQuery, useQueryCache } from '@pinia/colada'
-import { onScopeDispose, toValue, watch, type MaybeRefOrGetter } from 'vue'
+import { computed, onScopeDispose, toValue, watch, type MaybeRefOrGetter } from 'vue'
 import type { RateRow, RatesResponse } from './useApi'
 
-/**
- * Current rates for a direction, best-first. The initial (and SSR) load comes
- * through Pina Colada; live updates arrive via {@link useRatesStream}.
- */
+// Live rates for a direction. The initial (SSR) load comes through Nuxt's
+// useAsyncData; live updates arrive via {@link useRatesStream} which patches a
+// shared per-slug useState store. Reading rates from that store (rather than
+// useAsyncData's own data) keeps every consumer of a slug in sync — including
+// the calculator whose direction changes over time — and keeps SSE the only
+// piece that mutates rates, no Pinia Colada cache involved.
+
+type RatesStore = Record<string, RatesResponse | null>
+
+const STORE_KEY = 'rates'
+
 export function useRatesQuery(direction: MaybeRefOrGetter<string>) {
   const base = useApiBase()
-  return useQuery({
-    key: () => ['rates', toValue(direction)],
-    // Resolve to null on failure so a down/unreachable API degrades to the
-    // static fallback instead of crashing SSR.
-    query: async (): Promise<RatesResponse | null> => {
-      try {
-        return await $fetch<RatesResponse>(`/api/v1/rates/${toValue(direction)}`, { baseURL: base })
-      } catch {
-        return null
-      }
+  const slug = computed(() => toValue(direction))
+  const store = useState<RatesStore>(STORE_KEY, () => ({}))
+
+  const res = useAsyncData<RatesResponse | null>(
+    `rates-${slug.value}`,
+    async () => {
+      const s = slug.value
+      if (!s) return null
+      // null on failure so a down/unreachable API degrades to the static fallback.
+      const data = await $fetch<RatesResponse>(`/api/v1/rates/${s}`, { baseURL: base }).catch(
+        () => null,
+      )
+      store.value = { ...store.value, [s]: data }
+      return data
     },
-    enabled: () => !!toValue(direction),
-  })
+    { watch: [slug], default: () => null },
+  )
+
+  const data = computed(() => (slug.value ? (store.value[slug.value] ?? null) : null))
+  const state = computed(() => ({
+    status: res.status.value === 'idle' ? 'pending' : res.status.value,
+    data: data.value,
+    error: res.error.value,
+  }))
+
+  return { data, state, pending: res.pending, error: res.error, refresh: res.refresh }
 }
 
-// One EventSource per direction slug, shared across every subscriber (the
-// calculator and the card list both watch the same direction). Ref-counted so
-// the connection is opened once and closed only when the last consumer leaves.
+// One EventSource per direction slug, shared across every subscriber (calculator
+// + card list watch the same direction). Ref-counted so the connection opens
+// once and closes when the last consumer leaves.
 interface StreamEntry {
   es: EventSource
   refs: number
@@ -33,15 +52,14 @@ interface StreamEntry {
 const streams = new Map<string, StreamEntry>()
 
 /**
- * Subscribes to the server's SSE rate stream and patches the Colada cache for
- * the matching `useRatesQuery`, so the UI updates live without polling.
- * Client-only; cleans up on scope dispose and when the direction changes.
+ * Subscribes to the server's SSE rate stream and patches the shared rates store
+ * for the matching slug, so the UI updates live without polling. Client-only.
  */
 export function useRatesStream(direction: MaybeRefOrGetter<string>) {
   if (!import.meta.client) return
 
   const base = useApiBase()
-  const cache = useQueryCache()
+  const store = useState<RatesStore>(STORE_KEY, () => ({}))
   let currentSlug = ''
 
   const release = () => {
@@ -70,8 +88,8 @@ export function useRatesStream(direction: MaybeRefOrGetter<string>) {
           return
         }
         // Patch only once the query has populated (keeps the direction metadata).
-        const prev = cache.getQueryData<RatesResponse>(['rates', slug])
-        if (prev) cache.setQueryData(['rates', slug], { ...prev, rates: rows })
+        const prev = store.value[slug]
+        if (prev) store.value = { ...store.value, [slug]: { ...prev, rates: rows } }
       })
       // On error the browser reconnects automatically; nothing to do.
       entry = { es, refs: 0 }

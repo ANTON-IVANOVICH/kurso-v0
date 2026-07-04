@@ -1,22 +1,43 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { AccountUser } from '~/composables/useAuth'
 
-// Client registration (design: Auth & Onboarding). Creating the account starts a
-// real client session and drops you into the cabinet; the account backend
-// (email confirmation, real OAuth) slots in behind login() later.
+// Real registration against the API (bcrypt user). Social sign-up needs the
+// OAuth/bot backend and is flagged as upcoming rather than faked.
 definePageMeta({ layout: 'auth' })
 useSeoMeta({ title: 'Регистрация — Kurso' })
 
-const { login } = useAuth()
+const { register } = useAuth()
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const agreed = ref(false)
+const busy = ref(false)
+const error = ref('')
 
-function finish(via: AccountUser['via']) {
-  login({ email: via === 'email' ? email.value : undefined, via })
-  navigateTo('/account')
+async function doRegister() {
+  error.value = ''
+  if (!email.value.trim() || !password.value) {
+    error.value = 'Введите email и пароль'
+    return
+  }
+  if (password.value.length < 8) {
+    error.value = 'Пароль минимум 8 символов'
+    return
+  }
+  busy.value = true
+  try {
+    await register(email.value.trim(), password.value)
+    await navigateTo('/account')
+  } catch (e) {
+    const msg = (e as { data?: { message?: string } })?.data?.message
+    error.value = msg || 'Не удалось создать аккаунт'
+  } finally {
+    busy.value = false
+  }
+}
+
+function soon() {
+  error.value = 'Регистрация через соцсети скоро — пока используйте email'
 }
 
 // Lightweight password strength meter (0–3 filled segments).
@@ -61,7 +82,7 @@ const strengthColor = computed(
       <button
         type="button"
         class="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-brand py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-brand-hover"
-        @click="finish('telegram')"
+        @click="soon"
       >
         <svg
           width="19"
@@ -84,7 +105,7 @@ const strengthColor = computed(
         <button
           type="button"
           class="flex flex-1 items-center justify-center gap-2.5 rounded-2xl border border-line-strong bg-surface py-3 text-sm font-semibold text-ink transition-colors hover:border-[#3A4047]"
-          @click="finish('google')"
+          @click="soon"
         >
           <span
             class="flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-extrabold text-[#1A1A1A]"
@@ -95,7 +116,7 @@ const strengthColor = computed(
         <button
           type="button"
           class="flex flex-1 items-center justify-center gap-2.5 rounded-2xl border border-line-strong bg-surface py-3 text-sm font-semibold text-ink transition-colors hover:border-[#3A4047]"
-          @click="finish('apple')"
+          @click="soon"
         >
           <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
             <path
@@ -225,9 +246,10 @@ const strengthColor = computed(
       </span>
     </label>
 
-    <KButton block size="lg" class="!rounded-2xl" :disabled="!agreed" @click="finish('email')"
-      >Создать аккаунт</KButton
-    >
+    <p v-if="error" class="mb-2.5 text-[13px] text-danger">{{ error }}</p>
+    <KButton block size="lg" class="!rounded-2xl" :disabled="!agreed || busy" @click="doRegister">{{
+      busy ? 'Создаём…' : 'Создать аккаунт'
+    }}</KButton>
 
     <!-- trust -->
     <div

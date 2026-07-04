@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { AccountUser } from '~/composables/useAuth'
 
-// Client login. The account backend (JWT / Telegram / Google) isn't built yet,
-// so signing in establishes a real client session (cookie) and returns you to
-// where you were headed — the flows and states match the Auth & Onboarding design.
+// Real email/password login against the API. Social sign-in (Telegram/Google/
+// Apple) needs the OAuth/bot backend and is flagged as upcoming rather than faked.
 definePageMeta({ layout: 'auth' })
 useSeoMeta({ title: 'Вход — Kurso' })
 
@@ -15,11 +13,30 @@ const mode = ref<'form' | 'telegram'>('form')
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
+const busy = ref(false)
+const error = ref('')
 
-function finish(via: AccountUser['via']) {
-  login({ email: via === 'email' ? email.value : undefined, via })
-  const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/account'
-  navigateTo(redirect)
+async function doLogin() {
+  error.value = ''
+  if (!email.value.trim() || !password.value) {
+    error.value = 'Введите email и пароль'
+    return
+  }
+  busy.value = true
+  try {
+    await login(email.value.trim(), password.value)
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/account'
+    await navigateTo(redirect)
+  } catch (e) {
+    const msg = (e as { data?: { message?: string } })?.data?.message
+    error.value = msg || 'Неверный email или пароль'
+  } finally {
+    busy.value = false
+  }
+}
+
+function soon() {
+  error.value = 'Вход через соцсети скоро — пока используйте email и пароль'
 }
 </script>
 
@@ -70,7 +87,7 @@ function finish(via: AccountUser['via']) {
         <button
           type="button"
           class="flex flex-1 items-center justify-center gap-2.5 rounded-2xl border border-line-strong bg-surface py-3 text-sm font-semibold text-ink transition-colors hover:border-[#3A4047]"
-          @click="finish('google')"
+          @click="soon"
         >
           <span
             class="flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-extrabold text-[#1A1A1A]"
@@ -81,7 +98,7 @@ function finish(via: AccountUser['via']) {
         <button
           type="button"
           class="flex flex-1 items-center justify-center gap-2.5 rounded-2xl border border-line-strong bg-surface py-3 text-sm font-semibold text-ink transition-colors hover:border-[#3A4047]"
-          @click="finish('apple')"
+          @click="soon"
         >
           <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
             <path
@@ -173,7 +190,10 @@ function finish(via: AccountUser['via']) {
       <button type="button" class="text-[13px] text-brand-bright">Забыли пароль?</button>
     </div>
 
-    <KButton block size="lg" class="!rounded-2xl" @click="finish('email')">Войти</KButton>
+    <p v-if="error" class="mb-2.5 text-[13px] text-danger">{{ error }}</p>
+    <KButton block size="lg" class="!rounded-2xl" :disabled="busy" @click="doLogin">{{
+      busy ? 'Вход…' : 'Войти'
+    }}</KButton>
 
     <div class="mt-[18px] text-center text-sm text-ink-faint">
       Нет аккаунта?
@@ -269,7 +289,7 @@ function finish(via: AccountUser['via']) {
       <KStatusDot tone="success" pulse :size="7" />Ждём подтверждения…
     </div>
 
-    <KButton block size="lg" class="!rounded-2xl" @click="finish('telegram')">
+    <KButton block size="lg" class="!rounded-2xl" @click="soon">
       Открыть @kurso_bot
       <svg
         width="16"

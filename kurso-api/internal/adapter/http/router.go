@@ -24,11 +24,15 @@ type Deps struct {
 	DB             *pgxpool.Pool
 	Redis          *redis.Client
 	Svc            *rates.Service
-	Auth           *auth.Service
+	Auth           *auth.Service // admin identity
+	UserAuth       *auth.Service // end-user identity
 	Store          *store.Store
 	AllowedOrigins []string
 	// CookieSecure marks the refresh cookie Secure (production/HTTPS).
 	CookieSecure bool
+	// CookieDomain scopes the refresh cookie (empty = host-only for dev; set to
+	// ".kurso.io" in prod so the Nuxt SSR origin can read it).
+	CookieDomain string
 }
 
 // api binds handlers to their dependencies.
@@ -63,6 +67,20 @@ func NewRouter(d Deps) http.Handler {
 			r.Post("/exchangers/{slug}/reviews", a.createReview)
 			r.Post("/reviews/{id}/report", a.reportReview)
 			r.Get("/rates/{direction}", a.getRates)
+
+			// End-user auth. session is a non-rotating check the Nuxt SSR server
+			// calls (forwarding the refresh cookie) to resolve the current user.
+			r.Route("/auth", func(r chi.Router) {
+				r.Post("/register", a.userRegister)
+				r.Post("/login", a.userLogin)
+				r.Post("/refresh", a.userRefresh)
+				r.Post("/logout", a.userLogout)
+				r.Get("/session", a.userSession)
+				r.Group(func(r chi.Router) {
+					r.Use(a.requireUser)
+					r.Get("/me", a.userMe)
+				})
+			})
 		})
 		// SSE stream is long-lived — it must not be wrapped by a request timeout.
 		r.Get("/rates/{direction}/stream", a.streamRates)

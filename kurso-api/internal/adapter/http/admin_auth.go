@@ -39,27 +39,11 @@ type tokenResponse struct {
 }
 
 func (a *api) setRefreshCookie(w http.ResponseWriter, token string) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     refreshCookieName,
-		Value:    token,
-		Path:     refreshCookiePath,
-		HttpOnly: true,
-		Secure:   a.deps.CookieSecure,
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   int(a.deps.Auth.RefreshTTL().Seconds()),
-	})
+	a.setAuthCookie(w, refreshCookieName, refreshCookiePath, token, a.deps.Auth.RefreshTTL())
 }
 
 func (a *api) clearRefreshCookie(w http.ResponseWriter) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     refreshCookieName,
-		Value:    "",
-		Path:     refreshCookiePath,
-		HttpOnly: true,
-		Secure:   a.deps.CookieSecure,
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   -1,
-	})
+	a.clearAuthCookie(w, refreshCookieName, refreshCookiePath)
 }
 
 // adminLogin authenticates an administrator, sets the refresh cookie, and
@@ -78,7 +62,7 @@ func (a *api) adminLogin(w http.ResponseWriter, r *http.Request) {
 	a.setRefreshCookie(w, tokens.Refresh)
 	writeJSON(w, http.StatusOK, tokenResponse{
 		Token: tokens.Access,
-		Admin: adminDTO{ID: admin.ID, Email: admin.Email, Role: string(admin.Role)},
+		Admin: adminDTO{ID: admin.ID, Email: admin.Email, Role: admin.Role},
 	})
 }
 

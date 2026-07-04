@@ -32,6 +32,11 @@ type AdminConfig struct {
 	SeedEmail    string
 	SeedPassword string
 	CookieSecure bool // mark the refresh cookie Secure (production/HTTPS)
+	// CookieDomain scopes refresh cookies (empty = host-only for local dev; set
+	// to ".kurso.io" in prod so the Nuxt SSR origin can read them).
+	CookieDomain string
+	// UserJWTSecret signs end-user (kurso-web) tokens, separate from the admin secret.
+	UserJWTSecret string
 }
 
 // HTTPConfig holds HTTP server tuning.
@@ -91,12 +96,14 @@ func Load() (Config, error) {
 			TickInterval: getDuration("RATES_TICK_INTERVAL", 5*time.Second),
 		},
 		Admin: AdminConfig{
-			JWTSecret:    getenv("ADMIN_JWT_SECRET", "dev-admin-secret-change-in-production"),
-			AccessTTL:    getDuration("ADMIN_ACCESS_TTL", 15*time.Minute),
-			RefreshTTL:   getDuration("ADMIN_REFRESH_TTL", 30*24*time.Hour),
-			SeedEmail:    getenv("ADMIN_SEED_EMAIL", "admin@kurso.io"),
-			SeedPassword: getenv("ADMIN_SEED_PASSWORD", "admin12345"),
-			CookieSecure: env != "dev" && env != "development" && env != "local",
+			JWTSecret:     getenv("ADMIN_JWT_SECRET", "dev-admin-secret-change-in-production"),
+			AccessTTL:     getDuration("ADMIN_ACCESS_TTL", 15*time.Minute),
+			RefreshTTL:    getDuration("ADMIN_REFRESH_TTL", 30*24*time.Hour),
+			SeedEmail:     getenv("ADMIN_SEED_EMAIL", "admin@kurso.io"),
+			SeedPassword:  getenv("ADMIN_SEED_PASSWORD", "admin12345"),
+			CookieSecure:  env != "dev" && env != "development" && env != "local",
+			CookieDomain:  getenv("AUTH_COOKIE_DOMAIN", ""),
+			UserJWTSecret: getenv("USER_JWT_SECRET", "dev-user-secret-change-in-production"),
 		},
 		DB: DBConfig{
 			URL: getenv("DATABASE_URL", "postgres://kurso:kurso@localhost:5432/kurso?sslmode=disable"),

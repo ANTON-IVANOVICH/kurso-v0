@@ -86,8 +86,11 @@ func run() error {
 	go ticker.Run(ctx)
 	log.Info("rate runner started", "interval", cfg.Rates.TickInterval)
 
-	// Admin auth: ensure a seed administrator exists so a fresh DB can log in.
-	authSvc := auth.NewService(st, cfg.Admin.JWTSecret, cfg.Admin.AccessTTL, cfg.Admin.RefreshTTL)
+	// Auth: one service per identity store (admin + end user), distinct secrets.
+	adminAuth := auth.NewService(adminAuthRepo{st}, cfg.Admin.JWTSecret, cfg.Admin.AccessTTL, cfg.Admin.RefreshTTL)
+	userAuth := auth.NewService(userAuthRepo{st}, cfg.Admin.UserJWTSecret, cfg.Admin.AccessTTL, cfg.Admin.RefreshTTL)
+
+	// Ensure a seed administrator exists so a fresh DB can log in.
 	if hash, err := auth.HashPassword(cfg.Admin.SeedPassword); err != nil {
 		log.Warn("hash seed admin password failed", "err", err)
 	} else if err := st.EnsureAdmin(ctx, cfg.Admin.SeedEmail, hash, "superadmin"); err != nil {
@@ -102,10 +105,12 @@ func run() error {
 		DB:             pool,
 		Redis:          rdb,
 		Svc:            svc,
-		Auth:           authSvc,
+		Auth:           adminAuth,
+		UserAuth:       userAuth,
 		Store:          st,
 		AllowedOrigins: cfg.HTTP.AllowedOrigins,
 		CookieSecure:   cfg.Admin.CookieSecure,
+		CookieDomain:   cfg.Admin.CookieDomain,
 	})
 
 	srv := server.New(server.Config{
@@ -124,4 +129,32 @@ func pingWithTimeout(ctx context.Context, d time.Duration, ping func(context.Con
 	ctx, cancel := context.WithTimeout(ctx, d)
 	defer cancel()
 	return ping(ctx)
+}
+
+// adminAuthRepo / userAuthRepo adapt the store's admin/user lookups to the
+// auth.Repo port, so one auth.Service type serves both identity stores.
+type adminAuthRepo struct{ st *store.Store }
+
+func (r adminAuthRepo) AccountByEmail(ctx context.Context, email string) (auth.Account, error) {
+	a, err := r.st.AdminByEmail(ctx, email)
+	if err != nil {
+		return auth.Account{}, err
+	}
+	return auth.Account{ID: a.ID, Email: a.Email, Role: string(a.Role), PasswordHash: a.PasswordHash, Status: a.Status}, nil
+}
+func (r adminAuthRepo) TouchLogin(ctx context.Context, id string) error {
+	return r.st.TouchAdminLogin(ctx, id)
+}
+
+type userAuthRepo struct{ st *store.Store }
+
+func (r userAuthRepo) AccountByEmail(ctx context.Context, email string) (auth.Account, error) {
+	u, err := r.st.UserByEmail(ctx, email)
+	if err != nil {
+		return auth.Account{}, err
+	}
+	return auth.Account{ID: u.ID, Email: u.Email, Role: "user", PasswordHash: u.PasswordHash, Status: u.Status}, nil
+}
+func (r userAuthRepo) TouchLogin(ctx context.Context, id string) error {
+	return r.st.TouchUserLogin(ctx, id)
 }
