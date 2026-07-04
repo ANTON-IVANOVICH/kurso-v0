@@ -172,6 +172,35 @@ func (s *Store) RatesByDirection(ctx context.Context, directionID string) ([]dom
 	return out, rows.Err()
 }
 
+// MapExchangers returns located (cash-desk) exchangers joined to their current
+// rate for a direction, best rate first. Exchangers without a rate for the
+// direction are still returned (rate nil) so the map stays populated.
+func (s *Store) MapExchangers(ctx context.Context, directionID string) ([]domain.MapPoint, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT e.slug, e.name, e.latitude::float8, e.longitude::float8, e.address, e.city, e.hours,
+		       e.rating_avg::float8, e.reviews_count, (e.referral_url_template IS NOT NULL),
+		       r.rate::text
+		FROM exchangers e
+		LEFT JOIN rates r ON r.exchanger_id = e.id AND r.direction_id = $1 AND r.is_active
+		WHERE e.status = 'active' AND e.latitude IS NOT NULL AND e.longitude IS NOT NULL
+		ORDER BY r.rate DESC NULLS LAST, e.name`, directionID)
+	if err != nil {
+		return nil, fmt.Errorf("query map exchangers: %w", err)
+	}
+	defer rows.Close()
+
+	var out []domain.MapPoint
+	for rows.Next() {
+		var p domain.MapPoint
+		if err := rows.Scan(&p.Slug, &p.Name, &p.Latitude, &p.Longitude, &p.Address, &p.City,
+			&p.Hours, &p.RatingAvg, &p.ReviewsCount, &p.Partner, &p.Rate); err != nil {
+			return nil, fmt.Errorf("scan map point: %w", err)
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
 // RateHistoryByDirection returns the best (highest) rate per time bucket for a
 // direction over the given window, oldest first — the sparkline behind the
 // alert builder. bucketSeconds sizes each point so the series stays bounded.

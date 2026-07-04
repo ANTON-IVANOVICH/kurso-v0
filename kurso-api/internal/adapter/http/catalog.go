@@ -64,6 +64,57 @@ func (a *api) getExchanger(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, exchangerDTO(e))
 }
 
+type mapPointDTO struct {
+	Slug         string   `json:"slug"`
+	Name         string   `json:"name"`
+	Lat          float64  `json:"lat"`
+	Lng          float64  `json:"lng"`
+	Address      *string  `json:"address,omitempty"`
+	City         *string  `json:"city,omitempty"`
+	Hours        *string  `json:"hours,omitempty"`
+	RatingAvg    *float64 `json:"ratingAvg,omitempty"`
+	ReviewsCount int      `json:"reviewsCount"`
+	Partner      bool     `json:"partner"`
+	Rate         *string  `json:"rate,omitempty"`
+}
+
+type mapResponseDTO struct {
+	Direction openapi.Direction `json:"direction"`
+	Points    []mapPointDTO     `json:"points"`
+}
+
+// listMapPoints returns located exchangers (cash desks) with their rate for the
+// selected direction (query `direction`, default usdt-tinkoff). Powers the map.
+func (a *api) listMapPoints(w http.ResponseWriter, r *http.Request) {
+	slug := r.URL.Query().Get("direction")
+	if slug == "" {
+		slug = "usdt-tinkoff"
+	}
+	dir, ok, err := a.deps.Svc.DirectionBySlug(r.Context(), slug)
+	if err != nil {
+		a.serverError(w, "map.direction", err)
+		return
+	}
+	if !ok {
+		writeError(w, http.StatusNotFound, "not_found", "направление не найдено")
+		return
+	}
+	points, err := a.deps.Store.MapExchangers(r.Context(), dir.ID)
+	if err != nil {
+		a.serverError(w, "map points", err)
+		return
+	}
+	out := mapResponseDTO{Direction: directionDTO(dir), Points: make([]mapPointDTO, 0, len(points))}
+	for _, p := range points {
+		out.Points = append(out.Points, mapPointDTO{
+			Slug: p.Slug, Name: p.Name, Lat: p.Latitude, Lng: p.Longitude,
+			Address: p.Address, City: p.City, Hours: p.Hours, RatingAvg: p.RatingAvg,
+			ReviewsCount: p.ReviewsCount, Partner: p.Partner, Rate: p.Rate,
+		})
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
 // serverError logs and returns a generic 500 without leaking internals.
 func (a *api) serverError(w http.ResponseWriter, op string, err error) {
 	a.deps.Log.Error("request failed", "op", op, "err", err)

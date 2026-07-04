@@ -58,6 +58,20 @@ var (
 	// Per-exchanger multiplier applied to a direction's base rate. Index-aligned
 	// with seedExchangers; CryptoBridge/Coino lead, BaksMan trails.
 	exchangerFactor = []float64{1.0000, 0.9969, 0.9943, 1.0005, 0.9741, 0.9915}
+
+	// Moscow cash-desk locations for the seeded exchangers (real coordinates), so
+	// the map has points to plot. Applied idempotently on every boot.
+	seedGeo = []struct {
+		slug, address, city, hours string
+		lat, lng                   float64
+	}{
+		{"cryptobridge", "ул. Тверская, 12", "Москва", "10:00–21:00", 55.761500, 37.609400},
+		{"netex24", "Кутузовский просп., 5", "Москва", "24/7", 55.748000, 37.573000},
+		{"24paybank", "ул. Арбат, 24", "Москва", "09:00–20:00", 55.750000, 37.592000},
+		{"coino", "Ленинский просп., 40", "Москва", "10:00–22:00", 55.705000, 37.576000},
+		{"baksman", "Пресненская наб., 12", "Москва", "круглосуточно", 55.749000, 37.539000},
+		{"bitx", "Новый Арбат, 15", "Москва", "10:00–20:00", 55.752000, 37.586000},
+	}
 )
 
 // Seed idempotently loads the Stage-1 catalogue and an initial set of rates.
@@ -140,6 +154,22 @@ func (s *Store) Seed(ctx context.Context) error {
 			if err := s.UpsertRate(ctx, exID, dirID, ftoa(rate), ftoa(reserve)); err != nil {
 				return fmt.Errorf("seed rate %s/%s: %w", e.slug, d.slug, err)
 			}
+		}
+	}
+	return nil
+}
+
+// SeedGeo idempotently sets cash-desk coordinates for the seeded exchangers so
+// the map has points. Runs every boot (updates by slug), independent of the
+// one-shot catalogue Seed, so an existing database also gets located.
+func (s *Store) SeedGeo(ctx context.Context) error {
+	for _, g := range seedGeo {
+		if _, err := s.db.Exec(ctx, `
+			UPDATE exchangers
+			SET latitude = $2, longitude = $3, address = $4, city = $5, hours = $6
+			WHERE slug = $1 AND latitude IS NULL`,
+			g.slug, g.lat, g.lng, g.address, g.city, g.hours); err != nil {
+			return fmt.Errorf("seed geo %s: %w", g.slug, err)
 		}
 	}
 	return nil

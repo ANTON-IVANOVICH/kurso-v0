@@ -79,6 +79,9 @@ func run() error {
 	} else {
 		log.Info("catalogue seeded/verified")
 	}
+	if err := st.SeedGeo(ctx); err != nil {
+		log.Warn("map geo seed failed, continuing", "err", err)
+	}
 
 	hub := rates.NewHub()
 	svc := rates.NewService(st, rdb, hub)

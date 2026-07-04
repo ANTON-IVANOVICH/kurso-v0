@@ -70,6 +70,22 @@ type Exchanger struct {
 	OnSinceYear     int      // year the exchanger was added (created_at)
 }
 
+// MapPoint is a located exchanger (cash desk) shown on the map, with its current
+// rate for the selected direction.
+type MapPoint struct {
+	Slug         string
+	Name         string
+	Latitude     float64
+	Longitude    float64
+	Address      *string
+	City         *string
+	Hours        *string
+	RatingAvg    *float64
+	ReviewsCount int
+	Partner      bool
+	Rate         *string // best rate for the queried direction (nil if none)
+}
+
 // RateHistoryPoint is one time-bucket's best (highest) rate for a direction,
 // used to draw the sparkline behind the price-alert builder.
 type RateHistoryPoint struct {

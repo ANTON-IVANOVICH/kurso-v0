@@ -64,6 +64,7 @@ func NewRouter(d Deps) http.Handler {
 			r.Get("/directions", a.listDirections)
 			r.Get("/exchangers", a.listExchangers)
 			r.Get("/exchangers/{slug}", a.getExchanger)
+			r.Get("/map", a.listMapPoints)
 			r.Get("/exchangers/{slug}/reviews", a.listReviews)
 			r.Post("/exchangers/{slug}/reviews", a.createReview)
 			r.Post("/reviews/{id}/report", a.reportReview)

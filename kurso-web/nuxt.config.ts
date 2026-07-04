@@ -9,6 +9,9 @@ export default defineNuxtConfig({
     public: {
       // Base URL of kurso-api. Override in prod via NUXT_PUBLIC_API_BASE.
       apiBase: 'http://localhost:8080',
+      // Mapbox GL access token for the map page. Override via NUXT_PUBLIC_MAPBOX_TOKEN.
+      // Empty = the map falls back to a static projected preview (no tiles).
+      mapboxToken: '',
     },
   },
   // Auto-import components by filename only (no directory prefix), so
