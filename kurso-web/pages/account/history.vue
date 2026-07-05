@@ -1,14 +1,18 @@
 <script setup lang="ts">
+const { t } = useI18n()
+
 definePageMeta({ layout: 'account', middleware: 'auth' })
-useSeoMeta({ title: 'История переходов — Kurso' })
+useSeoMeta({ title: () => t('historyPage.seoTitle') })
 
 const { history } = useHistory()
 </script>
 
 <template>
   <div class="max-w-3xl">
-    <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">История переходов</h1>
-    <p class="mb-5 mt-1 text-sm text-ink-faint">Обменники, в которые вы переходили</p>
+    <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">
+      {{ t('historyPage.title') }}
+    </h1>
+    <p class="mb-5 mt-1 text-sm text-ink-faint">{{ t('historyPage.subtitle') }}</p>
 
     <div v-if="history.length" class="overflow-hidden rounded-2xl border border-line bg-surface">
       <AccountHistoryRow v-for="h in history" :key="h.id" :entry="h" />
@@ -36,9 +40,11 @@ const { history } = useHistory()
         </svg>
       </span>
       <p class="max-w-xs text-sm text-ink-muted">
-        Пока пусто. Когда перейдёте в обменник со страницы курсов, переход появится здесь.
+        {{ t('historyPage.empty') }}
       </p>
-      <NuxtLink to="/" class="text-sm font-semibold text-brand-bright">К курсам →</NuxtLink>
+      <NuxtLink to="/" class="text-sm font-semibold text-brand-bright">{{
+        t('historyPage.toRates')
+      }}</NuxtLink>
     </div>
   </div>
 </template>

@@ -4,17 +4,18 @@ import { computed } from 'vue'
 // Layout for nested content/legal pages (terms, privacy, cookies).
 // Desktop: full site chrome. Mobile: a nested screen — back bar instead of the
 // site header, no bottom navigation, and a slim legal footer.
+const { t } = useI18n()
 const route = useRoute()
 const title = computed(() => (route.meta.legalTitle as string | undefined) ?? '')
 
 // Slim legal footer per the Content & Legal design. "О проекте" only appears on
 // desktop (the mobile design omits it); the current page is highlighted.
 const footerLinks = [
-  { label: 'Условия', to: '/terms' },
-  { label: 'Конфиденциальность', to: '/privacy' },
-  { label: 'Cookies', to: '/cookies' },
-  { label: 'О проекте', to: '/about', desktopOnly: true },
-  { label: 'Контакты', to: '/contact' },
+  { key: 'terms', to: '/terms' },
+  { key: 'privacy', to: '/privacy' },
+  { key: 'cookies', to: '/cookies' },
+  { key: 'about', to: '/about', desktopOnly: true },
+  { key: 'contact', to: '/contact' },
 ]
 </script>
 
@@ -55,7 +56,7 @@ const footerLinks = [
               route.path === link.to ? 'font-semibold text-ink' : 'text-ink-muted hover:text-ink',
               link.desktopOnly ? 'hidden md:inline' : '',
             ]"
-            >{{ link.label }}</NuxtLink
+            >{{ t(`legalNav.${link.key}`) }}</NuxtLink
           >
         </nav>
       </div>

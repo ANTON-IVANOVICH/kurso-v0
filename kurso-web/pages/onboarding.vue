@@ -4,7 +4,8 @@ import { ref } from 'vue'
 // Client onboarding scaffold — 4 steps (design: Auth & Onboarding).
 // value-first → soft alert hook → auth → success. No backend wiring yet.
 definePageMeta({ layout: false })
-useSeoMeta({ title: 'Знакомство — Kurso' })
+const { t } = useI18n()
+useSeoMeta({ title: () => t('onboarding.seoTitle') })
 
 const step = ref(1)
 // Onboarding is a preview walkthrough — it does not create a session; real
@@ -44,9 +45,11 @@ const finish = () => navigateTo('/')
 
         <!-- STEP 1 · value first -->
         <div v-if="step === 1">
-          <h1 class="text-xl font-extrabold tracking-[-0.02em] text-ink">Лучшие курсы — сразу</h1>
+          <h1 class="text-xl font-extrabold tracking-[-0.02em] text-ink">
+            {{ t('onboarding.step1Title') }}
+          </h1>
           <p class="mb-4 mt-1.5 text-[13px] text-ink-muted">
-            Без регистрации. Выберите пару и смотрите.
+            {{ t('onboarding.step1Subtitle') }}
           </p>
           <div class="flex flex-col gap-2.5">
             <div
@@ -66,13 +69,15 @@ const finish = () => navigateTo('/')
                 <span
                   v-if="r.partner"
                   class="rounded bg-brand/[0.18] px-1.5 py-0.5 text-[9px] font-semibold text-brand-bright"
-                  >Партнёр</span
+                  >{{ t('onboarding.partner') }}</span
                 >
               </div>
               <span class="tnum text-[15px] font-bold text-ink">{{ r.rate }}</span>
             </div>
           </div>
-          <KButton block size="lg" class="mt-4 !rounded-2xl" @click="step = 2">Далее</KButton>
+          <KButton block size="lg" class="mt-4 !rounded-2xl" @click="step = 2">{{
+            t('onboarding.next')
+          }}</KButton>
         </div>
 
         <!-- STEP 2 · soft alert hook -->
@@ -94,23 +99,27 @@ const finish = () => navigateTo('/')
               <path d="M10.5 20a1.8 1.8 0 0 0 3 0" />
             </svg>
           </span>
-          <h1 class="text-xl font-extrabold tracking-[-0.02em] text-ink">Курс не нравится?</h1>
+          <h1 class="text-xl font-extrabold tracking-[-0.02em] text-ink">
+            {{ t('onboarding.step2Title') }}
+          </h1>
           <p class="mb-4 mt-1.5 text-sm leading-relaxed text-ink-muted">
-            Поставим алерт и пришлём в Telegram, когда USDT → Тинькофф вырастет.
+            {{ t('onboarding.step2Subtitle') }}
           </p>
           <div
             class="mb-3.5 flex items-baseline gap-2 rounded-2xl border border-brand bg-well px-4 py-3.5"
           >
-            <span class="text-[13px] text-ink-faint">Порог</span>
+            <span class="text-[13px] text-ink-faint">{{ t('onboarding.threshold') }}</span>
             <span class="tnum ml-auto text-2xl font-bold text-ink">81.50 ₽</span>
           </div>
-          <KButton block size="lg" class="!rounded-2xl" @click="step = 3">Настроить алерт</KButton>
+          <KButton block size="lg" class="!rounded-2xl" @click="step = 3">{{
+            t('onboarding.setupAlert')
+          }}</KButton>
           <button
             type="button"
             class="mt-2.5 w-full py-1.5 text-sm font-semibold text-ink-muted transition-colors hover:text-ink"
             @click="finish"
           >
-            Позже
+            {{ t('onboarding.later') }}
           </button>
         </div>
 
@@ -118,10 +127,10 @@ const finish = () => navigateTo('/')
         <div v-else-if="step === 3">
           <div class="mb-6 text-center">
             <h1 class="text-[21px] font-extrabold tracking-[-0.02em] text-ink">
-              Сохраним ваш алерт
+              {{ t('onboarding.step3Title') }}
             </h1>
             <p class="mx-auto mt-2 max-w-[300px] text-sm leading-relaxed text-ink-muted">
-              Войдите, чтобы получать уведомления. Быстрее всего — через Telegram.
+              {{ t('onboarding.step3Subtitle') }}
             </p>
           </div>
           <button
@@ -141,7 +150,7 @@ const finish = () => navigateTo('/')
             >
               <path d="M22 3 2 10.5l6 2.2M22 3l-3 17-8-6.3M22 3 8 12.7m0 0v5.3l3-3.6" />
             </svg>
-            Продолжить с Telegram
+            {{ t('onboarding.continueTelegram') }}
           </button>
           <div class="mb-[18px] flex gap-2.5">
             <button
@@ -160,7 +169,7 @@ const finish = () => navigateTo('/')
               class="flex flex-1 items-center justify-center rounded-2xl border border-line-strong bg-surface py-3 text-sm font-semibold text-ink-muted transition-colors hover:border-[#3A4047]"
               @click="pick()"
             >
-              Email
+              {{ t('onboarding.email') }}
             </button>
           </div>
           <div
@@ -180,7 +189,7 @@ const finish = () => navigateTo('/')
               <path d="M12 3 4 6v6c0 5 3.5 7.5 8 9 4.5-1.5 8-4 8-9V6Z" />
               <path d="m9 12 2 2 4-4" />
             </svg>
-            <span class="text-[13px] text-ink-muted">Не запрашиваем доступ к кошелькам</span>
+            <span class="text-[13px] text-ink-muted">{{ t('onboarding.noWalletAccess') }}</span>
           </div>
         </div>
 
@@ -208,15 +217,17 @@ const finish = () => navigateTo('/')
                 </svg>
               </span>
             </span>
-            <h1 class="text-[22px] font-extrabold tracking-[-0.02em] text-ink">Алерт создан!</h1>
+            <h1 class="text-[22px] font-extrabold tracking-[-0.02em] text-ink">
+              {{ t('onboarding.step4Title') }}
+            </h1>
             <p class="mx-auto mt-2 max-w-[300px] text-sm leading-relaxed text-ink-muted">
-              Пришлём в Telegram, когда USDT → Тинькофф достигнет <span class="tnum">81.50 ₽</span>
+              {{ t('onboarding.step4Subtitle') }} <span class="tnum">81.50 ₽</span>
             </p>
           </div>
 
           <div class="mb-4 rounded-2xl border border-line bg-surface p-4">
             <div class="mb-2.5 flex items-center justify-between">
-              <span class="text-[13px] text-ink-muted">До цели осталось</span>
+              <span class="text-[13px] text-ink-muted">{{ t('onboarding.toGoal') }}</span>
               <span class="tnum text-[13px] font-semibold text-success-bright">+0.37%</span>
             </div>
             <div class="h-2 overflow-hidden rounded-full bg-well">
@@ -225,12 +236,12 @@ const finish = () => navigateTo('/')
               />
             </div>
             <div class="mt-2 flex items-center justify-between text-xs text-ink-faint">
-              <span class="tnum">сейчас 81.20 ₽</span>
-              <span class="tnum">цель 81.50 ₽</span>
+              <span class="tnum">{{ t('onboarding.nowRate', { rate: '81.20 ₽' }) }}</span>
+              <span class="tnum">{{ t('onboarding.goalRate', { rate: '81.50 ₽' }) }}</span>
             </div>
           </div>
 
-          <div class="mb-2.5 text-[13px] font-bold text-ink">Что дальше</div>
+          <div class="mb-2.5 text-[13px] font-bold text-ink">{{ t('onboarding.whatNext') }}</div>
           <div class="mb-4 flex flex-col gap-2.5">
             <NuxtLink
               to="/exchangers"
@@ -254,7 +265,7 @@ const finish = () => navigateTo('/')
                   />
                 </svg>
               </span>
-              <span class="flex-1 text-[13px] text-ink">Добавьте обменники в избранное</span>
+              <span class="flex-1 text-[13px] text-ink">{{ t('onboarding.addFavorites') }}</span>
               <svg
                 class="text-ink-ghost"
                 width="15"
@@ -290,7 +301,7 @@ const finish = () => navigateTo('/')
                   <circle cx="12" cy="10" r="2.5" />
                 </svg>
               </span>
-              <span class="flex-1 text-[13px] text-ink">Найдите обменники на карте</span>
+              <span class="flex-1 text-[13px] text-ink">{{ t('onboarding.findOnMap') }}</span>
               <svg
                 class="text-ink-ghost"
                 width="15"
@@ -307,7 +318,9 @@ const finish = () => navigateTo('/')
             </NuxtLink>
           </div>
 
-          <KButton block size="lg" class="!rounded-2xl" @click="finish">Перейти к курсам</KButton>
+          <KButton block size="lg" class="!rounded-2xl" @click="finish">{{
+            t('onboarding.goToRates')
+          }}</KButton>
         </div>
       </div>
     </div>

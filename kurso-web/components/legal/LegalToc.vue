@@ -5,13 +5,15 @@ defineProps<{
   sections: { id: string; num: string; title: string }[]
   activeId: string
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
   <aside class="hidden md:block">
     <div class="sticky top-24">
       <div class="font-label text-[11px] uppercase tracking-[0.14em] text-ink-faint">
-        Содержание
+        {{ t('legalToc.heading') }}
       </div>
       <nav class="mt-3.5 flex flex-col gap-0.5 text-sm">
         <a

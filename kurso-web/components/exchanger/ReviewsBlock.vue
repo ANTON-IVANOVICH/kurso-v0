@@ -57,7 +57,7 @@ const error = ref('')
 async function submit() {
   error.value = ''
   if (form.body.trim().length < 10) {
-    error.value = 'Отзыв слишком короткий (минимум 10 символов)'
+    error.value = t('reviewsBlock.tooShort')
     return
   }
   submitting.value = true
@@ -69,16 +69,16 @@ async function submit() {
     })
     if (created.status === 'published') {
       await refresh()
-      notice.value = 'Спасибо! Ваш отзыв опубликован.'
+      notice.value = t('reviewsBlock.published')
     } else {
-      notice.value = 'Отзыв отправлен на модерацию — появится после проверки.'
+      notice.value = t('reviewsBlock.moderation')
     }
     form.body = ''
     form.author = ''
     form.rating = 5
     showForm.value = false
   } catch {
-    error.value = 'Не удалось отправить отзыв. Попробуйте позже.'
+    error.value = t('reviewsBlock.submitFailed')
   } finally {
     submitting.value = false
   }
@@ -127,7 +127,7 @@ const avatar = (name: string) => exchangerAvatar(name, name)
       @submit.prevent="submit"
     >
       <div class="mb-3 flex items-center gap-3">
-        <span class="text-[13px] text-ink-muted">Оценка</span>
+        <span class="text-[13px] text-ink-muted">{{ t('reviewsBlock.ratingLabel') }}</span>
         <div class="flex gap-1">
           <button
             v-for="s in 5"
@@ -144,26 +144,26 @@ const avatar = (name: string) => exchangerAvatar(name, name)
       </div>
       <input
         v-model="form.author"
-        placeholder="Имя (необязательно)"
+        :placeholder="t('reviewsBlock.namePlaceholder')"
         class="mb-2.5 w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-brand focus:outline-none"
       />
       <textarea
         v-model="form.body"
         rows="3"
-        placeholder="Как прошёл обмен? Курс, скорость, поддержка…"
+        :placeholder="t('reviewsBlock.bodyPlaceholder')"
         class="mb-1 w-full resize-none rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-brand focus:outline-none"
       />
       <p v-if="error" class="mb-2 text-[13px] text-danger">{{ error }}</p>
       <div class="mt-2 flex items-center gap-2.5">
         <KButton size="sm" :disabled="submitting" @click="submit">{{
-          submitting ? 'Отправка…' : 'Отправить'
+          submitting ? t('reviewsBlock.submitting') : t('reviewsBlock.submit')
         }}</KButton>
         <button
           type="button"
           class="text-[13px] text-ink-faint transition-colors hover:text-ink-muted"
           @click="showForm = false"
         >
-          Отмена
+          {{ t('reviewsBlock.cancel') }}
         </button>
       </div>
     </form>
@@ -217,7 +217,7 @@ const avatar = (name: string) => exchangerAvatar(name, name)
       v-if="!shown.length"
       class="rounded-2xl border border-dashed border-line-strong bg-well py-10 text-center text-sm text-ink-faint"
     >
-      {{ allReviews.length ? 'Нет отзывов в этой категории' : 'Пока нет отзывов — станьте первым' }}
+      {{ allReviews.length ? t('reviewsBlock.emptyCategory') : t('reviewsBlock.emptyFirst') }}
     </div>
 
     <!-- review cards -->
@@ -250,7 +250,7 @@ const avatar = (name: string) => exchangerAvatar(name, name)
         :disabled="reported[rv.id]"
         @click="report(rv.id)"
       >
-        {{ reported[rv.id] ? 'Жалоба отправлена' : 'Пожаловаться' }}
+        {{ reported[rv.id] ? t('reviewsBlock.reported') : t('reviewsBlock.report') }}
       </button>
     </div>
   </div>

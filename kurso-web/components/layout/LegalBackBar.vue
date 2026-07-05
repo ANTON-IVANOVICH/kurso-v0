@@ -3,6 +3,7 @@
 // Replaces the site header/bottom-nav so legal pages read as nested screens.
 defineProps<{ title: string }>()
 
+const { t } = useI18n()
 const router = useRouter()
 
 function goBack() {
@@ -15,7 +16,7 @@ function goBack() {
   <div class="relative z-20 flex items-center gap-3 border-b border-line-subtle px-4 py-3">
     <button
       type="button"
-      aria-label="Назад"
+      :aria-label="t('legalBackBar.back')"
       class="flex h-9 w-9 flex-none items-center justify-center rounded-full border border-line bg-surface text-ink transition-colors hover:border-line-strong"
       @click="goBack"
     >

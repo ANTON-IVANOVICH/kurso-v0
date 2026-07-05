@@ -28,16 +28,17 @@ export function useHistory() {
 
 /** Coarse "N ago" label for a past timestamp (client-side). */
 export function timeAgo(at: number, now = Date.now()): string {
+  const { t } = useI18n()
   const s = Math.max(0, Math.round((now - at) / 1000))
-  if (s < 60) return 'только что'
+  if (s < 60) return t('timeAgo.justNow')
   const m = Math.floor(s / 60)
-  if (m < 60) return `${m} мин назад`
+  if (m < 60) return t('timeAgo.minutes', { n: m })
   const h = Math.floor(m / 60)
-  if (h < 24) return `${h} ч назад`
+  if (h < 24) return t('timeAgo.hours', { n: h })
   const d = Math.floor(h / 24)
-  if (d < 7) return `${d} дн назад`
+  if (d < 7) return t('timeAgo.days', { n: d })
   const w = Math.floor(d / 7)
-  if (w < 5) return `${w} нед назад`
+  if (w < 5) return t('timeAgo.weeks', { n: w })
   const mo = Math.floor(d / 30)
-  return `${mo} мес назад`
+  return t('timeAgo.months', { n: mo })
 }

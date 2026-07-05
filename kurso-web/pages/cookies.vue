@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+const { t } = useI18n()
+
 definePageMeta({ layout: 'legal', legalTitle: 'Файлы cookies' })
 
 useSeoMeta({
-  title: 'Файлы cookies — Kurso',
-  description:
-    'Управление cookies на Kurso: необходимые, аналитические и маркетинговые категории. Выберите, какие файлы разрешить.',
+  title: () => t('cookies.seoTitle'),
+  description: () => t('cookies.seoDescription'),
 })
 
 const analytics = ref(true)
@@ -24,15 +25,16 @@ function onlyNecessary() {
 
 <template>
   <div class="mx-auto max-w-[820px] px-4 pt-8 md:px-6 md:pt-12">
-    <div class="font-label text-[11px] uppercase tracking-[0.14em] text-ink-faint">Правовое</div>
+    <div class="font-label text-[11px] uppercase tracking-[0.14em] text-ink-faint">
+      {{ t('cookies.eyebrow') }}
+    </div>
     <h1
       class="mt-3 text-[26px] font-extrabold tracking-[-0.025em] text-ink md:text-[34px] md:font-black"
     >
-      Файлы cookies
+      {{ t('cookies.title') }}
     </h1>
     <p class="mt-4 max-w-[660px] leading-relaxed text-ink-muted">
-      Мы используем cookies, чтобы сайт работал, запоминал ваши настройки и помогал нам улучшать
-      сервис. Ниже можно выбрать, какие категории разрешить.
+      {{ t('cookies.intro') }}
     </p>
 
     <!-- categories -->
@@ -40,10 +42,9 @@ function onlyNecessary() {
       <!-- necessary (always on) -->
       <div class="flex items-center justify-between gap-4 border-b border-line p-5">
         <div class="max-w-[520px]">
-          <div class="font-bold text-ink">Необходимые</div>
+          <div class="font-bold text-ink">{{ t('cookies.necessaryTitle') }}</div>
           <div class="mt-1 text-[13px] leading-relaxed text-ink-muted">
-            Обеспечивают базовую работу сайта: сессия, безопасность, сохранение выбора валюты.
-            Всегда включены.
+            {{ t('cookies.necessaryDesc') }}
           </div>
         </div>
         <div
@@ -57,9 +58,9 @@ function onlyNecessary() {
       <!-- analytics -->
       <div class="flex items-center justify-between gap-4 border-b border-line p-5">
         <div class="max-w-[520px]">
-          <div class="font-bold text-ink">Аналитические</div>
+          <div class="font-bold text-ink">{{ t('cookies.analyticsTitle') }}</div>
           <div class="mt-1 text-[13px] leading-relaxed text-ink-muted">
-            Помогают понять, как используется сайт, чтобы улучшать его. Данные обезличены.
+            {{ t('cookies.analyticsDesc') }}
           </div>
         </div>
         <button
@@ -80,9 +81,9 @@ function onlyNecessary() {
       <!-- marketing -->
       <div class="flex items-center justify-between gap-4 p-5">
         <div class="max-w-[520px]">
-          <div class="font-bold text-ink">Маркетинговые</div>
+          <div class="font-bold text-ink">{{ t('cookies.marketingTitle') }}</div>
           <div class="mt-1 text-[13px] leading-relaxed text-ink-muted">
-            Используются для оценки эффективности партнёрских размещений. По умолчанию выключены.
+            {{ t('cookies.marketingDesc') }}
           </div>
         </div>
         <button
@@ -102,26 +103,24 @@ function onlyNecessary() {
     </div>
 
     <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-      <KButton>Сохранить настройки</KButton>
-      <KButton variant="secondary" @click="acceptAll">Принять все</KButton>
+      <KButton>{{ t('cookies.save') }}</KButton>
+      <KButton variant="secondary" @click="acceptAll">{{ t('cookies.acceptAll') }}</KButton>
       <KButton variant="ghost" class="border border-line-strong" @click="onlyNecessary">
-        Только необходимые
+        {{ t('cookies.onlyNecessary') }}
       </KButton>
     </div>
 
     <div class="mt-9 max-w-[660px] space-y-6">
       <div>
-        <h2 class="text-[17px] font-bold text-ink">Что такое cookies</h2>
+        <h2 class="text-[17px] font-bold text-ink">{{ t('cookies.whatTitle') }}</h2>
         <p class="mt-2 leading-relaxed text-ink-muted">
-          Cookies — небольшие файлы, которые сайт сохраняет в браузере, чтобы запоминать ваши
-          действия и настройки между визитами.
+          {{ t('cookies.whatDesc') }}
         </p>
       </div>
       <div>
-        <h2 class="text-[17px] font-bold text-ink">Как управлять</h2>
+        <h2 class="text-[17px] font-bold text-ink">{{ t('cookies.manageTitle') }}</h2>
         <p class="mt-2 leading-relaxed text-ink-muted">
-          Изменить выбор можно в любой момент на этой странице или в настройках браузера. Отключение
-          части cookies может повлиять на работу сайта.
+          {{ t('cookies.manageDesc') }}
         </p>
       </div>
     </div>

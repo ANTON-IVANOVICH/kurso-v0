@@ -81,7 +81,7 @@ const isActive = (to: string) => (to === '/' ? route.path === '/' : route.path.s
         <NuxtLink
           v-if="user"
           to="/account"
-          aria-label="Личный кабинет"
+          :aria-label="t('siteHeader.accountAria')"
           class="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#3A4452] text-[13px] font-bold text-white md:hidden"
           >{{ user.initials }}</NuxtLink
         >
@@ -90,7 +90,7 @@ const isActive = (to: string) => (to === '/' ? route.path === '/' : route.path.s
         <NuxtLink
           v-if="user"
           to="/account"
-          aria-label="Личный кабинет"
+          :aria-label="t('siteHeader.accountAria')"
           class="hidden h-[38px] w-[38px] items-center justify-center rounded-full bg-[#3A4452] text-[13px] font-bold text-white transition-transform hover:scale-105 md:flex"
           >{{ user.initials }}</NuxtLink
         >

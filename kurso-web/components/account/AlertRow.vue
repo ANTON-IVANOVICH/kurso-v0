@@ -5,6 +5,8 @@ import { alertStatus, type Alert } from '~/composables/useAlerts'
 const props = withDefaults(defineProps<{ alert: Alert; actions?: boolean }>(), { actions: false })
 const emit = defineEmits<{ pause: []; resume: []; remove: [] }>()
 
+const { t } = useI18n()
+
 // Current rate is LIVE for the alert's direction (shared query/stream).
 const { best } = useDirectionRates(
   () => props.alert.directionSlug,
@@ -15,9 +17,15 @@ const status = computed(() => alertStatus(props.alert, best.value))
 const isTriggered = computed(() => status.value === 'triggered')
 
 const META = {
-  triggered: { label: 'сработал', cls: 'bg-success text-[#06231A]' },
-  active: { label: 'активен', cls: 'bg-surface-raised text-ink-muted border border-line-strong' },
-  paused: { label: 'на паузе', cls: 'bg-surface-raised text-ink-faint border border-line-strong' },
+  triggered: { label: 'alertRow.statusTriggered', cls: 'bg-success text-[#06231A]' },
+  active: {
+    label: 'alertRow.statusActive',
+    cls: 'bg-surface-raised text-ink-muted border border-line-strong',
+  },
+  paused: {
+    label: 'alertRow.statusPaused',
+    cls: 'bg-surface-raised text-ink-faint border border-line-strong',
+  },
 } as const
 
 const fmt = (n: number) => fmtNumber(n, n < 1000 ? 2 : 0)
@@ -46,15 +54,15 @@ const currentText = computed(() =>
       <span
         class="flex-none rounded-md px-2.5 py-1 text-[11px] font-semibold"
         :class="META[status].cls"
-        >{{ META[status].label }}</span
+        >{{ t(META[status].label) }}</span
       >
     </div>
 
     <div class="flex items-center justify-between gap-3">
       <span class="text-[13px] text-ink-muted">
-        {{ alert.direction === 'above' ? 'выше' : 'ниже' }}
+        {{ alert.direction === 'above' ? t('alertRow.above') : t('alertRow.below') }}
         <span class="tnum text-ink">{{ fmt(alert.threshold) }} {{ alert.unit }}</span>
-        · сейчас
+        · {{ t('alertRow.now') }}
         <span class="tnum" :class="isTriggered ? 'text-success-bright' : 'text-ink-muted'">{{
           currentText
         }}</span>
@@ -99,7 +107,7 @@ const currentText = computed(() =>
         class="flex-1 rounded-lg border border-line-strong bg-surface-raised py-2 text-[13px] font-semibold text-ink transition-colors hover:border-[#3A4047]"
         @click="emit('resume')"
       >
-        Возобновить
+        {{ t('alertRow.resume') }}
       </button>
       <button
         v-else
@@ -107,14 +115,14 @@ const currentText = computed(() =>
         class="flex-1 rounded-lg border border-line-strong bg-surface-raised py-2 text-[13px] font-semibold text-ink-muted transition-colors hover:text-ink"
         @click="emit('pause')"
       >
-        Приостановить
+        {{ t('alertRow.pause') }}
       </button>
       <button
         type="button"
         class="flex-1 rounded-lg border border-danger/30 bg-danger/[0.08] py-2 text-[13px] font-semibold text-danger transition-colors hover:bg-danger/15"
         @click="emit('remove')"
       >
-        Удалить
+        {{ t('alertRow.remove') }}
       </button>
     </div>
   </div>

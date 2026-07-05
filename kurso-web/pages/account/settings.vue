@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
 
+const { t } = useI18n()
+
 definePageMeta({ layout: 'account', middleware: 'auth' })
-useSeoMeta({ title: 'Настройки — Kurso' })
+useSeoMeta({ title: () => t('accountSettings.seoTitle') })
 
 const { user, logout } = useAuth()
 
@@ -14,7 +16,7 @@ async function signOut() {
   navigateTo('/')
 }
 async function removeAccount() {
-  if (confirm('Удалить аккаунт и все алерты? Действие необратимо.')) {
+  if (confirm(t('accountSettings.confirmDelete'))) {
     await logout()
     navigateTo('/')
   }
@@ -23,14 +25,16 @@ async function removeAccount() {
 
 <template>
   <div class="max-w-2xl">
-    <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">Настройки</h1>
-    <p class="mb-6 mt-1 text-sm text-ink-faint">Профиль, уведомления и безопасность</p>
+    <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">
+      {{ t('accountSettings.title') }}
+    </h1>
+    <p class="mb-6 mt-1 text-sm text-ink-faint">{{ t('accountSettings.subtitle') }}</p>
 
     <!-- profile -->
     <section class="mb-5 rounded-2xl border border-line bg-surface p-5">
-      <div class="mb-4 text-[15px] font-bold text-ink">Профиль</div>
+      <div class="mb-4 text-[15px] font-bold text-ink">{{ t('accountSettings.profile') }}</div>
       <div class="mb-3">
-        <span class="mb-1.5 block text-xs text-ink-faint">Имя</span>
+        <span class="mb-1.5 block text-xs text-ink-faint">{{ t('accountSettings.name') }}</span>
         <div class="rounded-2xl border border-line bg-well px-[15px] py-3 text-[15px] text-ink">
           {{ user?.name ?? '—' }}
         </div>
@@ -47,7 +51,9 @@ async function removeAccount() {
 
     <!-- notifications -->
     <section class="mb-5 rounded-2xl border border-line bg-surface p-5">
-      <div class="mb-4 text-[15px] font-bold text-ink">Каналы уведомлений</div>
+      <div class="mb-4 text-[15px] font-bold text-ink">
+        {{ t('accountSettings.notificationChannels') }}
+      </div>
       <div class="flex flex-col gap-2.5">
         <div
           class="flex items-center justify-between rounded-2xl border border-line bg-well px-4 py-3"
@@ -72,10 +78,14 @@ async function removeAccount() {
 
     <!-- security -->
     <section class="rounded-2xl border border-line bg-surface p-5">
-      <div class="mb-4 text-[15px] font-bold text-ink">Аккаунт</div>
+      <div class="mb-4 text-[15px] font-bold text-ink">{{ t('accountSettings.account') }}</div>
       <div class="flex flex-wrap gap-3">
-        <KButton variant="secondary" size="sm" @click="signOut">Выйти</KButton>
-        <KButton variant="danger" size="sm" @click="removeAccount">Удалить аккаунт</KButton>
+        <KButton variant="secondary" size="sm" @click="signOut">{{
+          t('accountSettings.signOut')
+        }}</KButton>
+        <KButton variant="danger" size="sm" @click="removeAccount">{{
+          t('accountSettings.deleteAccount')
+        }}</KButton>
       </div>
     </section>
   </div>

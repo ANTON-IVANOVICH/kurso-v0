@@ -4,7 +4,8 @@ import { computed, ref } from 'vue'
 // Real registration against the API (bcrypt user). Social sign-up needs the
 // OAuth/bot backend and is flagged as upcoming rather than faked.
 definePageMeta({ layout: 'auth' })
-useSeoMeta({ title: 'Регистрация — Kurso' })
+const { t } = useI18n()
+useSeoMeta({ title: () => t('register.seoTitle') })
 
 const { register } = useAuth()
 const email = ref('')
@@ -17,11 +18,11 @@ const error = ref('')
 async function doRegister() {
   error.value = ''
   if (!email.value.trim() || !password.value) {
-    error.value = 'Введите email и пароль'
+    error.value = t('register.errEmpty')
     return
   }
   if (password.value.length < 8) {
-    error.value = 'Пароль минимум 8 символов'
+    error.value = t('register.errShort')
     return
   }
   busy.value = true
@@ -30,14 +31,14 @@ async function doRegister() {
     await navigateTo('/account')
   } catch (e) {
     const msg = (e as { data?: { message?: string } })?.data?.message
-    error.value = msg || 'Не удалось создать аккаунт'
+    error.value = msg || t('register.errFailed')
   } finally {
     busy.value = false
   }
 }
 
 function soon() {
-  error.value = 'Регистрация через соцсети скоро — пока используйте email'
+  error.value = t('register.errSocialSoon')
 }
 
 // Lightweight password strength meter (0–3 filled segments).
@@ -49,7 +50,12 @@ const strength = computed(() => {
   if (/\d/.test(p) || /[^\w\s]/.test(p)) score++
   return score
 })
-const strengthLabel = computed(() => ['', 'слабый', 'средний', 'надёжный'][strength.value])
+const strengthLabel = computed(
+  () =>
+    ['', t('register.strengthWeak'), t('register.strengthMedium'), t('register.strengthStrong')][
+      strength.value
+    ],
+)
 const strengthColor = computed(
   () => ['', 'text-danger', 'text-warning', 'text-success-bright'][strength.value],
 )
@@ -74,8 +80,8 @@ const strengthColor = computed(
       </svg>
     </span>
 
-    <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">Создайте аккаунт</h1>
-    <p class="mb-5 mt-1.5 text-sm text-ink-muted">Алерты, избранное и история обменов</p>
+    <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">{{ t('register.heading') }}</h1>
+    <p class="mb-5 mt-1.5 text-sm text-ink-muted">{{ t('register.subtitle') }}</p>
 
     <!-- socials -->
     <div class="mb-[18px] flex flex-col gap-2.5">
@@ -97,9 +103,9 @@ const strengthColor = computed(
           <path d="M22 3 2 10.5l6 2.2M22 3l-3 17-8-6.3M22 3 8 12.7m0 0v5.3l3-3.6" />
         </svg>
         Telegram
-        <span class="rounded-md bg-white/20 px-2 py-[3px] text-[10px] font-semibold"
-          >рекомендуем</span
-        >
+        <span class="rounded-md bg-white/20 px-2 py-[3px] text-[10px] font-semibold">{{
+          t('register.recommended')
+        }}</span>
       </button>
       <div class="flex gap-2.5">
         <button
@@ -131,7 +137,7 @@ const strengthColor = computed(
     <!-- divider -->
     <div class="mb-[18px] flex items-center gap-3">
       <span class="h-px flex-1 bg-line" />
-      <span class="text-xs text-ink-faint">или по email</span>
+      <span class="text-xs text-ink-faint">{{ t('register.orEmail') }}</span>
       <span class="h-px flex-1 bg-line" />
     </div>
 
@@ -182,13 +188,13 @@ const strengthColor = computed(
       <input
         v-model="password"
         :type="showPassword ? 'text' : 'password'"
-        placeholder="Пароль"
+        :placeholder="t('register.passwordPlaceholder')"
         class="w-full bg-transparent text-[15px] text-ink placeholder:text-ink-faint focus:outline-none"
       />
       <button
         type="button"
         class="flex-none text-ink-faint transition-colors hover:text-ink-muted"
-        :aria-label="showPassword ? 'Скрыть пароль' : 'Показать пароль'"
+        :aria-label="showPassword ? t('register.hidePassword') : t('register.showPassword')"
         @click="showPassword = !showPassword"
       >
         <svg
@@ -241,14 +247,18 @@ const strengthColor = computed(
         </svg>
       </span>
       <span class="text-[13px] leading-snug text-ink-muted">
-        Соглашаюсь с <NuxtLink to="/terms" class="text-brand-bright">условиями</NuxtLink> и
-        <NuxtLink to="/privacy" class="text-brand-bright">политикой конфиденциальности</NuxtLink>
+        {{ t('register.consentPrefix') }}
+        <NuxtLink to="/terms" class="text-brand-bright">{{ t('register.consentTerms') }}</NuxtLink>
+        {{ t('register.consentAnd') }}
+        <NuxtLink to="/privacy" class="text-brand-bright">{{
+          t('register.consentPrivacy')
+        }}</NuxtLink>
       </span>
     </label>
 
     <p v-if="error" class="mb-2.5 text-[13px] text-danger">{{ error }}</p>
     <KButton block size="lg" class="!rounded-2xl" :disabled="!agreed || busy" @click="doRegister">{{
-      busy ? 'Создаём…' : 'Создать аккаунт'
+      busy ? t('register.creating') : t('register.createAccount')
     }}</KButton>
 
     <!-- trust -->
@@ -269,14 +279,14 @@ const strengthColor = computed(
         <path d="M12 3 4 6v6c0 5 3.5 7.5 8 9 4.5-1.5 8-4 8-9V6Z" />
         <path d="m9 12 2 2 4-4" />
       </svg>
-      <span class="text-[13px] leading-snug text-ink-muted"
-        >Не запрашиваем доступ к кошелькам и приватным ключам</span
-      >
+      <span class="text-[13px] leading-snug text-ink-muted">{{ t('register.trust') }}</span>
     </div>
 
     <div class="mt-[18px] text-center text-sm text-ink-faint">
-      Уже есть аккаунт?
-      <NuxtLink to="/login" class="font-semibold text-brand-bright">Войти</NuxtLink>
+      {{ t('register.haveAccount') }}
+      <NuxtLink to="/login" class="font-semibold text-brand-bright">{{
+        t('register.signIn')
+      }}</NuxtLink>
     </div>
   </div>
 </template>

@@ -3,6 +3,8 @@ import { ref } from 'vue'
 
 // Full-screen site search (opened from the mobile header lupe). Scaffold: the
 // input filters nothing yet — results below are representative placeholders.
+const { t } = useI18n()
+
 const { open, close } = useSearchOverlay()
 useScrollLock(open)
 
@@ -74,13 +76,13 @@ function onClose() {
           <input
             v-model="query"
             type="text"
-            placeholder="Валюта, направление или обменник"
+            :placeholder="t('searchOverlay.searchPlaceholder')"
             class="w-full bg-transparent text-[15px] text-ink placeholder:text-ink-faint focus:outline-none"
           />
           <button
             v-if="query"
             type="button"
-            aria-label="Очистить"
+            :aria-label="t('searchOverlay.clear')"
             class="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-surface-chip text-ink-bright"
             @click="query = ''"
           >
@@ -98,13 +100,15 @@ function onClose() {
           </button>
         </div>
         <button type="button" class="text-[15px] font-semibold text-brand-bright" @click="onClose">
-          Отмена
+          {{ t('searchOverlay.cancel') }}
         </button>
       </div>
 
       <div class="scrolly flex-1 overflow-y-auto px-4 pb-8">
         <!-- popular directions -->
-        <div class="mb-2.5 text-[13px] text-ink-faint">Популярные направления</div>
+        <div class="mb-2.5 text-[13px] text-ink-faint">
+          {{ t('searchOverlay.popularDirections') }}
+        </div>
         <div class="scrollx -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
           <button
             v-for="d in directions"
@@ -118,8 +122,9 @@ function onClose() {
 
         <!-- results -->
         <div class="mb-2.5 mt-6 text-[13px] text-ink-faint">
-          Обменники по запросу «<span class="text-ink-bright">{{ query || '…' }}</span
-          >»
+          {{ t('searchOverlay.resultsForPrefix')
+          }}<span class="text-ink-bright">{{ query || '…' }}</span
+          >{{ t('searchOverlay.resultsForSuffix') }}
         </div>
         <div class="flex flex-col gap-2.5">
           <button
@@ -140,7 +145,7 @@ function onClose() {
                 <span
                   v-if="r.partner"
                   class="rounded-[5px] bg-brand/[0.18] px-1.5 py-0.5 text-[10px] font-semibold text-brand-bright"
-                  >Партнёр</span
+                  >{{ t('searchOverlay.partner') }}</span
                 >
               </span>
               <span class="mt-0.5 block text-xs text-ink-faint">

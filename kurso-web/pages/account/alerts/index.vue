@@ -1,6 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'account', middleware: 'auth' })
-useSeoMeta({ title: 'Алерты — Kurso' })
+const { t } = useI18n()
+useSeoMeta({ title: () => t('alertsList.seoTitle') })
 
 const { alerts, pause, resume, remove } = useAlerts()
 </script>
@@ -9,10 +10,14 @@ const { alerts, pause, resume, remove } = useAlerts()
   <div class="max-w-2xl">
     <div class="mb-5 flex items-center justify-between gap-3">
       <div>
-        <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">Алерты</h1>
-        <p class="mt-1 text-sm text-ink-faint">Пришлём в Telegram, когда курс дойдёт до порога</p>
+        <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">
+          {{ t('alertsList.heading') }}
+        </h1>
+        <p class="mt-1 text-sm text-ink-faint">{{ t('alertsList.subtitle') }}</p>
       </div>
-      <KButton pill @click="navigateTo('/account/alerts/new')">+ Новый алерт</KButton>
+      <KButton pill @click="navigateTo('/account/alerts/new')">{{
+        t('alertsList.newAlert')
+      }}</KButton>
     </div>
 
     <div v-if="alerts.length" class="flex flex-col gap-3">
@@ -49,10 +54,11 @@ const { alerts, pause, resume, remove } = useAlerts()
         </svg>
       </span>
       <p class="max-w-xs text-sm text-ink-muted">
-        Пока нет алертов. Поставьте порог по нужной паре — пришлём уведомление, когда курс его
-        достигнет.
+        {{ t('alertsList.empty') }}
       </p>
-      <KButton @click="navigateTo('/account/alerts/new')">Создать первый алерт</KButton>
+      <KButton @click="navigateTo('/account/alerts/new')">{{
+        t('alertsList.createFirst')
+      }}</KButton>
     </div>
   </div>
 </template>

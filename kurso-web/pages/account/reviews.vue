@@ -1,12 +1,13 @@
 <script setup lang="ts">
+const { t } = useI18n()
 definePageMeta({ layout: 'account', middleware: 'auth' })
-useSeoMeta({ title: 'Мои отзывы — Kurso' })
+useSeoMeta({ title: () => t('myReviews.seoTitle') })
 </script>
 
 <template>
   <div class="max-w-2xl">
-    <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">Мои отзывы</h1>
-    <p class="mb-5 mt-1 text-sm text-ink-faint">Отзывы, которые вы оставили обменникам</p>
+    <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">{{ t('myReviews.title') }}</h1>
+    <p class="mb-5 mt-1 text-sm text-ink-faint">{{ t('myReviews.subtitle') }}</p>
 
     <div
       class="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line-strong bg-surface/50 px-6 py-12 text-center"
@@ -28,11 +29,11 @@ useSeoMeta({ title: 'Мои отзывы — Kurso' })
         </svg>
       </span>
       <p class="max-w-xs text-sm text-ink-muted">
-        Вы ещё не оставляли отзывов. Поделитесь опытом на странице обменника — это помогает другим.
+        {{ t('myReviews.empty') }}
       </p>
-      <NuxtLink to="/exchangers" class="text-sm font-semibold text-brand-bright"
-        >К обменникам →</NuxtLink
-      >
+      <NuxtLink to="/exchangers" class="text-sm font-semibold text-brand-bright">{{
+        t('myReviews.toExchangers')
+      }}</NuxtLink>
     </div>
   </div>
 </template>

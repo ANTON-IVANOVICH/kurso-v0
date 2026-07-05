@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Notifications feed (opened from the header bell). Scaffold with representative
 // items: triggered alerts, new best rates, review replies, reserve updates.
+const { t } = useI18n()
 const { open, close } = useNotifications()
 useScrollLock(open)
 
@@ -12,12 +13,21 @@ interface Notif {
   unread?: boolean
 }
 
-const items: Notif[] = [
-  { type: 'alert', title: 'Сработал алерт', time: '2 мин назад', unread: true },
-  { type: 'rate', title: 'Новый лучший курс', time: '1 ч назад' },
-  { type: 'review', title: 'Ответ на ваш отзыв', time: '3 ч назад' },
-  { type: 'reserve', title: 'Резерв пополнен', time: 'вчера' },
-]
+const items = computed<Notif[]>(() => [
+  {
+    type: 'alert',
+    title: t('notifications.alertTitle'),
+    time: t('notifications.time2min'),
+    unread: true,
+  },
+  { type: 'rate', title: t('notifications.rateTitle'), time: t('notifications.time1h') },
+  { type: 'review', title: t('notifications.reviewTitle'), time: t('notifications.time3h') },
+  {
+    type: 'reserve',
+    title: t('notifications.reserveTitle'),
+    time: t('notifications.timeYesterday'),
+  },
+])
 
 function onClose() {
   close()
@@ -50,7 +60,7 @@ function onClose() {
       <div class="flex items-center justify-between gap-3 px-4 pb-3 pt-5">
         <button
           type="button"
-          aria-label="Закрыть"
+          :aria-label="t('notifications.close')"
           class="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full border border-line bg-surface text-ink-muted transition-colors hover:border-line-strong"
           @click="onClose"
         >
@@ -67,8 +77,10 @@ function onClose() {
             <path d="M15 5l-7 7 7 7" />
           </svg>
         </button>
-        <span class="text-[17px] font-bold text-ink">Уведомления</span>
-        <button type="button" class="text-[13px] font-semibold text-brand-bright">Прочитать</button>
+        <span class="text-[17px] font-bold text-ink">{{ t('notifications.heading') }}</span>
+        <button type="button" class="text-[13px] font-semibold text-brand-bright">
+          {{ t('notifications.markRead') }}
+        </button>
       </div>
 
       <!-- feed -->
@@ -149,16 +161,21 @@ function onClose() {
             <div class="text-[15px] font-semibold text-ink">{{ n.title }}</div>
             <div class="mt-0.5 text-[13px] leading-snug text-ink-muted">
               <template v-if="n.type === 'alert'"
-                >USDT → Тинькофф достиг <span class="tnum">81.50 ₽</span> в CryptoBridge</template
+                >USDT → Тинькофф {{ t('notifications.alertReached') }}
+                <span class="tnum">81.50 ₽</span>
+                {{ t('notifications.alertOn') }} CryptoBridge</template
               >
               <template v-else-if="n.type === 'rate'"
-                >ETH → Альфа: <span class="tnum">312 400 ₽</span> — на
-                <span class="tnum">0.4%</span> выше</template
+                >ETH → Альфа: <span class="tnum">312 400 ₽</span> {{ t('notifications.rateMid') }}
+                <span class="tnum">0.4%</span> {{ t('notifications.rateHigher') }}</template
               >
               <template v-else-if="n.type === 'review'"
-                >NetEx24 ответил на ваш отзыв об обмене</template
+                >NetEx24 {{ t('notifications.reviewBody') }}</template
               >
-              <template v-else>24Paybank: USDT — резерв <span class="tnum">18.2M ₽</span></template>
+              <template v-else
+                >24Paybank: USDT — {{ t('notifications.reserveBody') }}
+                <span class="tnum">18.2M ₽</span></template
+              >
             </div>
             <div class="tnum mt-1.5 text-xs text-ink-faint">{{ n.time }}</div>
           </div>

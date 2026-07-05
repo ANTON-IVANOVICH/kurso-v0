@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 
 definePageMeta({ layout: 'account', middleware: 'auth' })
-useSeoMeta({ title: 'Избранное — Kurso' })
+const { t } = useI18n()
+useSeoMeta({ title: () => t('favorites.seoTitle') })
 
 const { favorites, remove } = useFavorites()
 const { data: exchangers } = useExchangersQuery()
@@ -13,15 +14,17 @@ const onlineMap = computed(
 
 <template>
   <div class="max-w-3xl">
-    <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">Избранное</h1>
-    <p class="mb-5 mt-1 text-sm text-ink-faint">Обменники, за которыми вы следите</p>
+    <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">
+      {{ t('favorites.heading') }}
+    </h1>
+    <p class="mb-5 mt-1 text-sm text-ink-faint">{{ t('favorites.subtitle') }}</p>
 
     <div v-if="favorites.length" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <div v-for="f in favorites" :key="f.slug" class="group relative">
         <FavoriteCard :favorite="f" :online="onlineMap.get(f.slug) ?? true" />
         <button
           type="button"
-          aria-label="Убрать из избранного"
+          :aria-label="t('favorites.removeAria')"
           class="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-canvas/70 text-danger opacity-0 transition-opacity hover:bg-canvas group-hover:opacity-100"
           @click.prevent="remove(f.slug)"
         >
@@ -58,9 +61,9 @@ const onlineMap = computed(
         </svg>
       </span>
       <p class="max-w-xs text-sm text-ink-muted">
-        Пусто. Откройте каталог обменников и нажмите на сердечко, чтобы добавить сюда.
+        {{ t('favorites.emptyText') }}
       </p>
-      <span class="text-sm font-semibold text-brand-bright">К обменникам →</span>
+      <span class="text-sm font-semibold text-brand-bright">{{ t('favorites.toExchangers') }}</span>
     </NuxtLink>
   </div>
 </template>

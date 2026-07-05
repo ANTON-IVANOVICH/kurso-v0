@@ -5,6 +5,7 @@ import { timeAgo, useHistory, type HistoryEntry } from '~/composables/useHistory
 const props = defineProps<{ entry: HistoryEntry }>()
 const apiBase = useApiBase()
 const { record } = useHistory()
+const { t } = useI18n()
 
 // Client clock so the relative time doesn't drift SSR↔client.
 const now = ref(props.entry.at)
@@ -45,7 +46,7 @@ function again() {
       rel="noopener nofollow"
       class="flex-none whitespace-nowrap text-[13px] font-semibold text-brand-bright"
       @click="again"
-      >снова →</a
+      >{{ t('historyRow.again') }} →</a
     >
   </div>
 </template>

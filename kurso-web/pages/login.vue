@@ -4,7 +4,8 @@ import { ref } from 'vue'
 // Real email/password login against the API. Social sign-in (Telegram/Google/
 // Apple) needs the OAuth/bot backend and is flagged as upcoming rather than faked.
 definePageMeta({ layout: 'auth' })
-useSeoMeta({ title: 'Вход — Kurso' })
+const { t } = useI18n()
+useSeoMeta({ title: () => t('login.seoTitle') })
 
 const { login } = useAuth()
 const route = useRoute()
@@ -19,7 +20,7 @@ const error = ref('')
 async function doLogin() {
   error.value = ''
   if (!email.value.trim() || !password.value) {
-    error.value = 'Введите email и пароль'
+    error.value = t('login.enterEmailPassword')
     return
   }
   busy.value = true
@@ -29,14 +30,14 @@ async function doLogin() {
     await navigateTo(redirect)
   } catch (e) {
     const msg = (e as { data?: { message?: string } })?.data?.message
-    error.value = msg || 'Неверный email или пароль'
+    error.value = msg || t('login.invalidCredentials')
   } finally {
     busy.value = false
   }
 }
 
 function soon() {
-  error.value = 'Вход через соцсети скоро — пока используйте email и пароль'
+  error.value = t('login.socialSoon')
 }
 </script>
 
@@ -60,8 +61,10 @@ function soon() {
       </svg>
     </span>
 
-    <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">С возвращением</h1>
-    <p class="mb-5 mt-1.5 text-sm text-ink-muted">Войдите, чтобы управлять алертами и избранным</p>
+    <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">
+      {{ t('login.welcomeBack') }}
+    </h1>
+    <p class="mb-5 mt-1.5 text-sm text-ink-muted">{{ t('login.subtitle') }}</p>
 
     <div class="mb-[18px] flex flex-col gap-2.5">
       <button
@@ -81,7 +84,7 @@ function soon() {
         >
           <path d="M22 3 2 10.5l6 2.2M22 3l-3 17-8-6.3M22 3 8 12.7m0 0v5.3l3-3.6" />
         </svg>
-        Продолжить с Telegram
+        {{ t('login.continueTelegram') }}
       </button>
       <div class="flex gap-2.5">
         <button
@@ -112,7 +115,7 @@ function soon() {
 
     <div class="mb-[18px] flex items-center gap-3">
       <span class="h-px flex-1 bg-line" />
-      <span class="text-xs text-ink-faint">или по email</span>
+      <span class="text-xs text-ink-faint">{{ t('login.orByEmail') }}</span>
       <span class="h-px flex-1 bg-line" />
     </div>
 
@@ -161,13 +164,13 @@ function soon() {
       <input
         v-model="password"
         :type="showPassword ? 'text' : 'password'"
-        placeholder="Пароль"
+        :placeholder="t('login.passwordPlaceholder')"
         class="w-full bg-transparent text-[15px] text-ink placeholder:text-ink-faint focus:outline-none"
       />
       <button
         type="button"
         class="flex-none text-ink-faint transition-colors hover:text-ink-muted"
-        :aria-label="showPassword ? 'Скрыть пароль' : 'Показать пароль'"
+        :aria-label="showPassword ? t('login.hidePassword') : t('login.showPassword')"
         @click="showPassword = !showPassword"
       >
         <svg
@@ -187,17 +190,21 @@ function soon() {
     </label>
 
     <div class="mb-[18px] mt-2.5 text-right">
-      <button type="button" class="text-[13px] text-brand-bright">Забыли пароль?</button>
+      <button type="button" class="text-[13px] text-brand-bright">
+        {{ t('login.forgotPassword') }}
+      </button>
     </div>
 
     <p v-if="error" class="mb-2.5 text-[13px] text-danger">{{ error }}</p>
     <KButton block size="lg" class="!rounded-2xl" :disabled="busy" @click="doLogin">{{
-      busy ? 'Вход…' : 'Войти'
+      busy ? t('login.signingIn') : t('login.submit')
     }}</KButton>
 
     <div class="mt-[18px] text-center text-sm text-ink-faint">
-      Нет аккаунта?
-      <NuxtLink to="/register" class="font-semibold text-brand-bright">Создать</NuxtLink>
+      {{ t('login.noAccount') }}
+      <NuxtLink to="/register" class="font-semibold text-brand-bright">{{
+        t('login.create')
+      }}</NuxtLink>
     </div>
   </div>
 
@@ -205,7 +212,7 @@ function soon() {
   <div v-else>
     <button
       type="button"
-      aria-label="Назад"
+      :aria-label="t('login.back')"
       class="mb-2 flex h-[38px] w-[38px] items-center justify-center rounded-full border border-line bg-surface text-ink transition-colors hover:border-line-strong"
       @click="mode = 'form'"
     >
@@ -240,9 +247,11 @@ function soon() {
           <path d="M22 3 2 10.5l6 2.2M22 3l-3 17-8-6.3M22 3 8 12.7m0 0v5.3l3-3.6" />
         </svg>
       </span>
-      <h1 class="text-[22px] font-extrabold tracking-[-0.02em] text-ink">Подтвердите вход</h1>
+      <h1 class="text-[22px] font-extrabold tracking-[-0.02em] text-ink">
+        {{ t('login.confirmLogin') }}
+      </h1>
       <p class="mx-auto mb-[26px] mt-2 max-w-[300px] text-sm leading-relaxed text-ink-muted">
-        Откройте нашего бота в Telegram и нажмите «Подтвердить» — вернётесь сюда автоматически
+        {{ t('login.confirmHint') }}
       </p>
     </div>
 
@@ -263,7 +272,7 @@ function soon() {
           </svg>
         </span>
         <span class="text-sm text-ink"
-          >Открыли бота <span class="text-brand-bright">@kurso_bot</span></span
+          >{{ t('login.openedBot') }} <span class="text-brand-bright">@kurso_bot</span></span
         >
       </div>
       <div class="flex items-center gap-3">
@@ -274,23 +283,23 @@ function soon() {
             class="h-3.5 w-3.5 animate-kspin rounded-full border-2 border-brand border-t-transparent"
           />
         </span>
-        <span class="text-sm text-ink">Нажмите «Подтвердить» в боте</span>
+        <span class="text-sm text-ink">{{ t('login.tapConfirm') }}</span>
       </div>
       <div class="flex items-center gap-3">
         <span
           class="tnum flex h-7 w-7 flex-none items-center justify-center rounded-full border-2 border-line-strong text-xs font-bold text-ink-faint"
           >3</span
         >
-        <span class="text-sm text-ink-faint">Вернитесь в приложение</span>
+        <span class="text-sm text-ink-faint">{{ t('login.returnToApp') }}</span>
       </div>
     </div>
 
     <div class="mb-[18px] flex items-center justify-center gap-2 text-[13px] text-ink-faint">
-      <KStatusDot tone="success" pulse :size="7" />Ждём подтверждения…
+      <KStatusDot tone="success" pulse :size="7" />{{ t('login.waitingConfirmation') }}
     </div>
 
     <KButton block size="lg" class="!rounded-2xl" @click="soon">
-      Открыть @kurso_bot
+      {{ t('login.openBot') }}
       <svg
         width="16"
         height="16"

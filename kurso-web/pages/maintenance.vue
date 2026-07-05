@@ -3,6 +3,8 @@
 // Mobile = centered compact layout (design v1); desktop = two-column (v2).
 definePageMeta({ layout: false })
 
+const { t } = useI18n()
+
 const refresh = () => {
   if (import.meta.client) location.reload()
 }
@@ -11,11 +13,11 @@ const openTelegram = () => {
 }
 
 type StepState = 'done' | 'active' | 'pending'
-const steps: { label: string; state: StepState; num?: string }[] = [
-  { label: 'Остановка', state: 'done' },
-  { label: 'Миграция', state: 'done' },
-  { label: 'Обновление', state: 'active' },
-  { label: 'Запуск', state: 'pending', num: '4' },
+const steps: { labelKey: string; state: StepState; num?: string }[] = [
+  { labelKey: 'maintenance.stepStop', state: 'done' },
+  { labelKey: 'maintenance.stepMigration', state: 'done' },
+  { labelKey: 'maintenance.stepUpdate', state: 'active' },
+  { labelKey: 'maintenance.stepLaunch', state: 'pending', num: '4' },
 ]
 // Connector before step i+1 is filled once the prior step is done and the next reached.
 const isFilled = (i: number) => steps[i].state === 'done' && steps[i + 1].state !== 'pending'
@@ -74,17 +76,16 @@ const isFilled = (i: number) => steps[i].state === 'done' && steps[i + 1].state 
               <path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2" />
               <circle cx="12" cy="12" r="4" />
             </svg>
-            <span class="font-label text-[11px] uppercase tracking-[0.16em] text-warning"
-              >Плановые работы</span
-            >
+            <span class="font-label text-[11px] uppercase tracking-[0.16em] text-warning">{{
+              t('maintenance.planned')
+            }}</span>
           </div>
 
           <h1 class="mt-4 text-[22px] font-extrabold text-ink md:mt-5 md:text-[30px]">
-            Обновляем парсеры курсов
+            {{ t('maintenance.title') }}
           </h1>
           <p class="mt-3 max-w-[420px] text-[15px] leading-relaxed text-ink-muted">
-            Делаем сбор курсов быстрее и точнее. Сайт ненадолго недоступен, но алерты и Telegram-бот
-            продолжают работать — уведомим, когда вернёмся.
+            {{ t('maintenance.desc') }}
           </p>
 
           <!-- mobile: compact countdown pill -->
@@ -93,13 +94,16 @@ const isFilled = (i: number) => steps[i].state === 'done' && steps[i + 1].state 
           >
             <KStatusDot tone="warning" pulse :size="8" />
             <span class="text-[13px] text-ink-muted"
-              >Ориентировочно до <span class="tnum font-semibold text-ink">14:30 МСК</span></span
+              >{{ t('maintenance.approxUntil') }}
+              <span class="tnum font-semibold text-ink"
+                >14:30 {{ t('maintenance.msk') }}</span
+              ></span
             >
           </div>
 
           <!-- desktop: 4-step tracker -->
           <div class="mt-8 hidden w-full max-w-[440px] items-start md:flex">
-            <template v-for="(s, i) in steps" :key="s.label">
+            <template v-for="(s, i) in steps" :key="s.labelKey">
               <div class="flex flex-col items-center gap-2 text-center">
                 <span
                   class="flex h-9 w-9 items-center justify-center rounded-full"
@@ -145,7 +149,7 @@ const isFilled = (i: number) => steps[i].state === 'done' && steps[i + 1].state 
                     'text-warning': s.state === 'active',
                     'text-ink-faint': s.state === 'pending',
                   }"
-                  >{{ s.label }}</span
+                  >{{ t(s.labelKey) }}</span
                 >
               </div>
               <div
@@ -170,7 +174,7 @@ const isFilled = (i: number) => steps[i].state === 'done' && steps[i + 1].state 
               >
                 <path d="M22 3 2 10.5l6 2.2M22 3l-3 17-8-6.3" />
               </svg>
-              Статус в Telegram
+              {{ t('maintenance.statusTelegram') }}
             </KButton>
             <KButton variant="secondary" @click="refresh">
               <svg
@@ -185,7 +189,7 @@ const isFilled = (i: number) => steps[i].state === 'done' && steps[i + 1].state 
               >
                 <path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5" />
               </svg>
-              Обновить
+              {{ t('maintenance.refresh') }}
             </KButton>
           </div>
         </div>
@@ -194,7 +198,7 @@ const isFilled = (i: number) => steps[i].state === 'done' && steps[i + 1].state 
         <div class="relative hidden md:flex md:items-center md:pl-10">
           <div class="w-full rounded-2xl border border-line bg-surface-nested p-6 text-center">
             <div class="font-label text-[11px] uppercase tracking-[0.16em] text-ink-faint">
-              Запуск ориентировочно через
+              {{ t('maintenance.launchIn') }}
             </div>
             <div
               class="tnum mt-3 bg-[linear-gradient(150deg,#F2D08A,#E0A954)] bg-clip-text text-[52px] font-extrabold leading-none text-transparent"
@@ -202,7 +206,8 @@ const isFilled = (i: number) => steps[i].state === 'done' && steps[i + 1].state 
               00:14:32
             </div>
             <div class="mt-3 inline-flex items-center gap-2 text-sm text-ink-muted">
-              <KStatusDot tone="warning" pulse :size="7" />до <span class="tnum">14:30</span> МСК
+              <KStatusDot tone="warning" pulse :size="7" />{{ t('maintenance.until') }}
+              <span class="tnum">14:30</span> {{ t('maintenance.msk') }}
             </div>
 
             <div class="mt-6 h-1.5 w-full overflow-hidden rounded-full bg-line">
@@ -210,7 +215,7 @@ const isFilled = (i: number) => steps[i].state === 'done' && steps[i + 1].state 
                 class="h-full w-[66%] rounded-full bg-[linear-gradient(90deg,#D99A33,#E0A954)]"
               />
             </div>
-            <div class="tnum mt-3 text-xs text-ink-faint">готово 66% · шаг 3 из 4</div>
+            <div class="tnum mt-3 text-xs text-ink-faint">{{ t('maintenance.progressLabel') }}</div>
           </div>
         </div>
       </div>

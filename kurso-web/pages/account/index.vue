@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+const { t } = useI18n()
+
 definePageMeta({ layout: 'account', middleware: 'auth' })
-useSeoMeta({ title: 'Личный кабинет — Kurso' })
+useSeoMeta({ title: () => t('accountHome.seoTitle') })
 
 const { alerts, activeCount } = useAlerts()
 const { favorites } = useFavorites()
@@ -26,16 +28,18 @@ const recentHistory = computed(() => history.value.slice(0, 3))
 
 <template>
   <div>
-    <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">Обзор</h1>
-    <p class="mb-6 mt-1 text-sm text-ink-faint">Сводка по вашим алертам, избранному и переходам</p>
+    <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-ink">
+      {{ t('accountHome.title') }}
+    </h1>
+    <p class="mb-6 mt-1 text-sm text-ink-faint">{{ t('accountHome.subtitle') }}</p>
 
     <!-- metrics -->
     <div class="mb-6 grid grid-cols-3 gap-2.5 md:gap-4">
       <div class="rounded-2xl border border-line bg-surface p-3.5 md:rounded-[18px] md:p-5">
         <div class="mb-2 flex items-center justify-between md:mb-3.5">
-          <span class="text-[11px] text-ink-faint md:text-sm md:text-ink-muted"
-            >Активные алерты</span
-          >
+          <span class="text-[11px] text-ink-faint md:text-sm md:text-ink-muted">{{
+            t('accountHome.activeAlerts')
+          }}</span>
           <span
             class="hidden h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-brand/[0.12] text-brand-bright md:flex"
           >
@@ -58,13 +62,15 @@ const recentHistory = computed(() => history.value.slice(0, 3))
           {{ activeCount }}
         </div>
         <div class="mt-1 text-[11px] text-ink-faint md:mt-1.5 md:text-xs">
-          {{ alerts.length ? 'отслеживаются' : 'нет активных' }}
+          {{ alerts.length ? t('accountHome.tracked') : t('accountHome.noneActive') }}
         </div>
       </div>
 
       <div class="rounded-2xl border border-line bg-surface p-3.5 md:rounded-[18px] md:p-5">
         <div class="mb-2 flex items-center justify-between md:mb-3.5">
-          <span class="text-[11px] text-ink-faint md:text-sm md:text-ink-muted">Избранное</span>
+          <span class="text-[11px] text-ink-faint md:text-sm md:text-ink-muted">{{
+            t('accountHome.favorites')
+          }}</span>
           <span
             class="hidden h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-warning/[0.12] text-warning md:flex"
           >
@@ -87,14 +93,16 @@ const recentHistory = computed(() => history.value.slice(0, 3))
         <div class="tnum text-2xl font-bold tracking-[-0.02em] text-ink md:text-[32px]">
           {{ favorites.length }}
         </div>
-        <div class="mt-1 text-[11px] text-ink-faint md:mt-1.5 md:text-xs">обменников</div>
+        <div class="mt-1 text-[11px] text-ink-faint md:mt-1.5 md:text-xs">
+          {{ t('accountHome.exchangersLabel') }}
+        </div>
       </div>
 
       <div class="rounded-2xl border border-line bg-surface p-3.5 md:rounded-[18px] md:p-5">
         <div class="mb-2 flex items-center justify-between md:mb-3.5">
-          <span class="text-[11px] text-ink-faint md:text-sm md:text-ink-muted"
-            >Переходы за месяц</span
-          >
+          <span class="text-[11px] text-ink-faint md:text-sm md:text-ink-muted">{{
+            t('accountHome.clicksMonth')
+          }}</span>
           <span
             class="hidden h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-success/[0.12] text-success-bright md:flex"
           >
@@ -115,16 +123,18 @@ const recentHistory = computed(() => history.value.slice(0, 3))
         <div class="tnum text-2xl font-bold tracking-[-0.02em] text-ink md:text-[32px]">
           {{ monthCount }}
         </div>
-        <div class="mt-1 text-[11px] text-ink-faint md:mt-1.5 md:text-xs">переходов</div>
+        <div class="mt-1 text-[11px] text-ink-faint md:mt-1.5 md:text-xs">
+          {{ t('accountHome.clicksLabel') }}
+        </div>
       </div>
     </div>
 
     <!-- alerts -->
     <div class="mb-3 flex items-center justify-between">
-      <span class="text-[17px] font-bold text-ink">Мои алерты</span>
-      <NuxtLink to="/account/alerts" class="text-[13px] font-semibold text-brand-bright"
-        >Все алерты →</NuxtLink
-      >
+      <span class="text-[17px] font-bold text-ink">{{ t('accountHome.myAlerts') }}</span>
+      <NuxtLink to="/account/alerts" class="text-[13px] font-semibold text-brand-bright">{{
+        t('accountHome.allAlerts')
+      }}</NuxtLink>
     </div>
     <div v-if="topAlerts.length" class="mb-7 grid gap-3 md:grid-cols-2">
       <AlertRow v-for="a in topAlerts" :key="a.id" :alert="a" />
@@ -151,20 +161,24 @@ const recentHistory = computed(() => history.value.slice(0, 3))
         </svg>
       </span>
       <p class="text-sm text-ink-muted">
-        Пока нет алертов. Поставьте порог — пришлём, когда курс дойдёт.
+        {{ t('accountHome.noAlertsHint') }}
       </p>
-      <KButton size="sm" @click="navigateTo('/account/alerts/new')">Создать алерт</KButton>
+      <KButton size="sm" @click="navigateTo('/account/alerts/new')">{{
+        t('accountHome.createAlert')
+      }}</KButton>
     </div>
 
     <!-- favorites + history -->
     <div class="grid gap-6 md:grid-cols-[1fr_1.2fr]">
       <div>
         <div class="mb-3 flex items-center justify-between">
-          <span class="text-[17px] font-bold text-ink">Избранные обменники</span>
+          <span class="text-[17px] font-bold text-ink">{{
+            t('accountHome.favoriteExchangers')
+          }}</span>
           <NuxtLink
             to="/account/favorites"
             class="text-[13px] font-semibold text-brand-bright md:hidden"
-            >Все →</NuxtLink
+            >{{ t('accountHome.allShort') }}</NuxtLink
           >
         </div>
         <div v-if="topFavorites.length">
@@ -211,12 +225,12 @@ const recentHistory = computed(() => history.value.slice(0, 3))
               />
             </svg>
           </span>
-          <span class="text-sm text-ink-muted">Добавьте обменники в избранное</span>
+          <span class="text-sm text-ink-muted">{{ t('accountHome.addFavorites') }}</span>
         </NuxtLink>
       </div>
 
       <div>
-        <div class="mb-3 text-[17px] font-bold text-ink">История переходов</div>
+        <div class="mb-3 text-[17px] font-bold text-ink">{{ t('accountHome.clickHistory') }}</div>
         <div
           v-if="recentHistory.length"
           class="overflow-hidden rounded-2xl border border-line bg-surface"
@@ -227,7 +241,7 @@ const recentHistory = computed(() => history.value.slice(0, 3))
           v-else
           class="rounded-2xl border border-dashed border-line-strong bg-surface/50 px-6 py-8 text-center text-sm text-ink-faint"
         >
-          Пока пусто — переходы в обменники появятся здесь.
+          {{ t('accountHome.historyEmpty') }}
         </div>
       </div>
     </div>

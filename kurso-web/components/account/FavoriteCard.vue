@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Favorite } from '~/composables/useFavorites'
 
+const { t } = useI18n()
+
 withDefaults(defineProps<{ favorite: Favorite; online?: boolean; vertical?: boolean }>(), {
   online: true,
   vertical: false,
@@ -34,7 +36,7 @@ withDefaults(defineProps<{ favorite: Favorite; online?: boolean; vertical?: bool
         <span
           class="h-1.5 w-1.5 rounded-full"
           :style="{ backgroundColor: online ? '#2BC58C' : '#5A616A' }"
-        />{{ online ? 'онлайн' : 'офлайн' }}
+        />{{ online ? t('favoriteCard.online') : t('favoriteCard.offline') }}
       </div>
     </div>
   </NuxtLink>

@@ -4,6 +4,8 @@
 // Mobile = centered compact layout (design v1); desktop = two-column (v2).
 const props = defineProps<{ error: { statusCode?: number; message?: string } }>()
 
+const { t } = useI18n()
+
 const is404 = computed(() => props.error?.statusCode === 404)
 
 const clearTo = (path: string) => clearError({ redirect: path })
@@ -14,31 +16,39 @@ const refresh = () => {
 
 type Row = { code?: string; name?: string; rate?: string; bg?: string; notFound?: boolean }
 // Decorative "rates" list for the 404 right panel (desktop only).
-const rateRows: Row[] = [
+const rateRows = computed<Row[]>(() => [
   { code: 'СБ', name: 'Сбербанк', rate: '81 240 ₽', bg: '#1E8E4A' },
   { code: 'ТБ', name: 'Т-Банк', rate: '81 050 ₽', bg: '#2E7DF2' },
   { notFound: true },
   { code: 'АБ', name: 'Альфа-Банк', rate: '80 890 ₽', bg: '#E24B4B' },
-  { code: 'НЛ', name: 'Наличные', rate: '80 500 ₽', bg: '#C77D2E' },
+  { code: 'НЛ', name: t('errorPage.cash'), rate: '80 500 ₽', bg: '#C77D2E' },
   { code: 'ЮM', name: 'ЮMoney', rate: '80 320 ₽', bg: '#8B5CF6' },
-]
+])
 
-const directions = ['USDT → Сбербанк', 'BTC → Т-Банк', 'TON → Наличные']
+const directions = computed(() => [
+  'USDT → Сбербанк',
+  'BTC → Т-Банк',
+  `TON → ${t('errorPage.cash')}`,
+])
 
 type SysState = 'ok' | 'fail' | 'degraded'
-const systems: { label: string; state: SysState }[] = [
-  { label: 'API курсов', state: 'ok' },
-  { label: 'Парсеры фидов', state: 'fail' },
-  { label: 'Виджеты', state: 'degraded' },
-  { label: 'Telegram-алерты', state: 'ok' },
-  { label: 'База резервов', state: 'ok' },
-]
+const systems = computed<{ label: string; state: SysState }[]>(() => [
+  { label: t('errorPage.sysRatesApi'), state: 'ok' },
+  { label: t('errorPage.sysFeedParsers'), state: 'fail' },
+  { label: t('errorPage.sysWidgets'), state: 'degraded' },
+  { label: t('errorPage.sysTelegramAlerts'), state: 'ok' },
+  { label: t('errorPage.sysReservesDb'), state: 'ok' },
+])
 const sysTone: Record<SysState, 'success' | 'danger' | 'warning'> = {
   ok: 'success',
   fail: 'danger',
   degraded: 'warning',
 }
-const sysText: Record<SysState, string> = { ok: 'ОК', fail: 'Сбой', degraded: 'Деградация' }
+const sysText = computed<Record<SysState, string>>(() => ({
+  ok: t('errorPage.sysOk'),
+  fail: t('errorPage.sysFail'),
+  degraded: t('errorPage.sysDegraded'),
+}))
 const sysColor: Record<SysState, string> = {
   ok: 'text-success',
   fail: 'text-danger',
@@ -75,7 +85,8 @@ const sysColor: Record<SysState, string> = {
         <!-- content: centered on mobile, left-aligned on desktop -->
         <div class="flex flex-col items-center text-center md:items-start md:text-left">
           <div class="font-label text-[11px] uppercase tracking-[0.16em] text-brand-bright">
-            Ошибка <span class="tnum">404</span> · страница не найдена
+            {{ t('errorPage.errorWord') }} <span class="tnum">404</span>
+            {{ t('errorPage.notFoundSuffix') }}
           </div>
 
           <div
@@ -85,16 +96,17 @@ const sysColor: Record<SysState, string> = {
           </div>
 
           <h1 class="mt-2 text-[22px] font-extrabold text-ink md:text-[30px]">
-            Этот курс потерялся
+            {{ t('errorPage.notFoundTitle') }}
           </h1>
           <p class="mt-3 max-w-[420px] text-[15px] leading-relaxed text-ink-muted">
-            Возможно, ссылка устарела или направление больше не отслеживается. Актуальные курсы — на
-            месте.
+            {{ t('errorPage.notFoundText') }}
           </p>
 
           <div class="mt-6 flex flex-wrap justify-center gap-3 md:justify-start">
-            <KButton @click="goHome">На главную</KButton>
-            <KButton variant="secondary" @click="clearTo('/exchangers')">Все обменники</KButton>
+            <KButton @click="goHome">{{ t('errorPage.goHome') }}</KButton>
+            <KButton variant="secondary" @click="clearTo('/exchangers')">{{
+              t('errorPage.allExchangers')
+            }}</KButton>
           </div>
 
           <!-- faux search -->
@@ -115,12 +127,12 @@ const sysColor: Record<SysState, string> = {
               <circle cx="11" cy="11" r="7" />
               <path d="M21 21l-3.5-3.5" />
             </svg>
-            <span class="truncate">Найти направление, например «USDT → Сбербанк»…</span>
+            <span class="truncate">{{ t('errorPage.searchPlaceholder') }}</span>
           </div>
 
           <div class="mt-6 w-full">
             <div class="font-label text-[11px] uppercase tracking-[0.16em] text-ink-ghost">
-              Популярные направления
+              {{ t('errorPage.popularDirections') }}
             </div>
             <div class="mt-3 flex flex-wrap justify-center gap-2 md:justify-start">
               <span
@@ -148,7 +160,9 @@ const sysColor: Record<SysState, string> = {
                   class="flex h-9 w-9 flex-none items-center justify-center rounded-lg border border-dashed border-brand/50 text-sm font-bold text-brand-bright"
                   >?</span
                 >
-                <span class="text-sm text-brand-bright">направление не найдено</span>
+                <span class="text-sm text-brand-bright">{{
+                  t('errorPage.directionNotFound')
+                }}</span>
                 <span class="tnum ml-auto text-sm text-ink-faint">— ₽</span>
               </div>
               <div
@@ -201,11 +215,10 @@ const sysColor: Record<SysState, string> = {
           </div>
 
           <h1 class="mt-5 text-[22px] font-extrabold text-ink md:mt-6 md:text-[30px]">
-            Курсы временно недоступны
+            {{ t('errorPage.errorTitle') }}
           </h1>
           <p class="mt-3 max-w-[420px] text-[15px] leading-relaxed text-ink-muted">
-            На стороне сервиса произошёл сбой при обновлении котировок. Мы уже разбираемся —
-            обновите страницу через пару минут. Ваши алерты продолжают работать.
+            {{ t('errorPage.errorText') }}
           </p>
 
           <div class="mt-6 flex flex-wrap justify-center gap-3 md:justify-start">
@@ -222,16 +235,18 @@ const sysColor: Record<SysState, string> = {
               >
                 <path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5" />
               </svg>
-              Обновить
+              {{ t('errorPage.refresh') }}
             </KButton>
-            <KButton variant="secondary" @click="clearTo('/maintenance')">Статус-страница</KButton>
+            <KButton variant="secondary" @click="clearTo('/maintenance')">{{
+              t('errorPage.statusPage')
+            }}</KButton>
           </div>
 
           <div class="mt-6 inline-flex items-center gap-2 font-label text-xs text-ink-faint">
             <KStatusDot tone="danger" :size="6" />
             <span
               >request-id: <span class="tnum">0x9F-A21C-4E</span> ·
-              <span class="tnum">14:06:22</span> МСК</span
+              <span class="tnum">14:06:22</span> {{ t('errorPage.timezone') }}</span
             >
           </div>
         </div>
@@ -240,7 +255,7 @@ const sysColor: Record<SysState, string> = {
         <div class="relative hidden md:flex md:items-center md:pl-10">
           <div class="w-full rounded-2xl border border-line bg-surface-nested p-5">
             <div class="flex items-center justify-between border-b border-line-subtle pb-3">
-              <span class="text-sm font-semibold text-ink">Состояние систем</span>
+              <span class="text-sm font-semibold text-ink">{{ t('errorPage.systemsStatus') }}</span>
               <span class="text-xs text-ink-faint">uptime <span class="tnum">99.94%</span></span>
             </div>
             <div class="mt-2 flex flex-col gap-0.5">

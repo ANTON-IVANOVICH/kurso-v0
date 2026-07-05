@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 
 definePageMeta({ layout: false, middleware: 'auth' })
-useSeoMeta({ title: 'Алерт сработал — Kurso' })
+const { t, plural } = useI18n()
+useSeoMeta({ title: () => t('alertTriggered.seoTitle') })
 
 const route = useRoute()
 const id = computed(() => route.params.id as string)
@@ -62,8 +63,8 @@ function pauseAndBack() {
       v-if="!alert"
       class="flex min-h-[100dvh] flex-col items-center justify-center gap-4 px-6 text-center"
     >
-      <p class="text-ink-muted">Алерт не найден или был удалён.</p>
-      <KButton @click="navigateTo('/account/alerts')">К моим алертам</KButton>
+      <p class="text-ink-muted">{{ t('alertTriggered.notFound') }}</p>
+      <KButton @click="navigateTo('/account/alerts')">{{ t('alertTriggered.toMyAlerts') }}</KButton>
     </div>
 
     <div v-else class="mx-auto max-w-[520px]">
@@ -88,7 +89,9 @@ function pauseAndBack() {
             <circle cx="12" cy="12" r="3" />
           </svg>
         </span>
-        <div class="text-[22px] font-extrabold tracking-[-0.02em]">Порог достигнут</div>
+        <div class="text-[22px] font-extrabold tracking-[-0.02em]">
+          {{ t('alertTriggered.thresholdReached') }}
+        </div>
         <div class="mt-1 text-[15px] font-semibold opacity-80">{{ alert.pair }}</div>
       </div>
 
@@ -109,7 +112,9 @@ function pauseAndBack() {
                 <span class="truncate text-base font-bold text-ink">{{
                   best.row.exchangerName
                 }}</span>
-                <KBadge v-if="best.row.partner" tone="brand">Партнёр</KBadge>
+                <KBadge v-if="best.row.partner" tone="brand">{{
+                  t('alertTriggered.partner')
+                }}</KBadge>
               </div>
               <div v-if="best.row.ratingAvg != null" class="tnum mt-0.5 text-xs text-ink-muted">
                 <span class="text-warning-deep">★</span> {{ best.row.ratingAvg.toFixed(1) }} ·
@@ -123,24 +128,27 @@ function pauseAndBack() {
               v-if="overBy != null && overBy >= 0"
               class="tnum mb-0.5 text-xs font-semibold text-success-bright"
             >
-              +{{ fmt(overBy) }} {{ unit }} над порогом
+              +{{ fmt(overBy) }} {{ unit }} {{ t('alertTriggered.overThreshold') }}
             </span>
           </div>
           <div class="mb-3.5 flex flex-wrap gap-2 text-xs text-ink-muted">
             <span
               v-if="best.row.minAmount"
               class="tnum rounded-lg border border-line bg-well px-2.5 py-1.5"
-              >мин {{ fmtCompact(Number(best.row.minAmount)) }} {{ unit }}</span
+              >{{ t('alertTriggered.min') }} {{ fmtCompact(Number(best.row.minAmount)) }}
+              {{ unit }}</span
             >
             <span
               v-if="best.row.maxAmount"
               class="tnum rounded-lg border border-line bg-well px-2.5 py-1.5"
-              >макс {{ fmtCompact(Number(best.row.maxAmount)) }} {{ unit }}</span
+              >{{ t('alertTriggered.max') }} {{ fmtCompact(Number(best.row.maxAmount)) }}
+              {{ unit }}</span
             >
             <span
               v-if="best.row.reserve"
               class="tnum rounded-lg border border-line bg-well px-2.5 py-1.5"
-              >резерв {{ fmtCompact(Number(best.row.reserve)) }} {{ unit }}</span
+              >{{ t('alertTriggered.reserve') }} {{ fmtCompact(Number(best.row.reserve)) }}
+              {{ unit }}</span
             >
           </div>
           <KButton
@@ -150,7 +158,7 @@ function pauseAndBack() {
             :href="goHref(best.row.exchangerSlug)"
             @click="jump(best.row.exchangerSlug, best.row.exchangerName)"
           >
-            Перейти в {{ best.row.exchangerName }}
+            {{ t('alertTriggered.goTo', { name: best.row.exchangerName }) }}
             <svg
               width="16"
               height="16"
@@ -165,7 +173,7 @@ function pauseAndBack() {
             </svg>
           </KButton>
           <p class="mt-2.5 text-center text-xs text-ink-faint">
-            Курс актуален ~3 минуты · затем пересчитается
+            {{ t('alertTriggered.rateFresh') }}
           </p>
         </div>
 
@@ -173,14 +181,15 @@ function pauseAndBack() {
           v-else
           class="mb-4 rounded-[18px] border border-line bg-surface p-6 text-center text-sm text-ink-muted"
         >
-          Курсы по этой паре сейчас недоступны. Попробуйте обновить страницу.
+          {{ t('alertTriggered.noRates') }}
         </div>
 
         <!-- alternatives -->
         <template v-if="alternatives.length">
           <div class="mb-2.5 text-sm font-bold text-ink">
-            Ещё {{ alternatives.length }}
-            {{ pluralRu(alternatives.length, 'обменник', 'обменника', 'обменников') }} выше порога
+            {{
+              t('alertTriggered.moreAbove', { count: plural(alternatives.length, 'exchangers') })
+            }}
           </div>
           <div class="mb-[18px] flex flex-col gap-2.5">
             <a
@@ -205,7 +214,8 @@ function pauseAndBack() {
                   {{ alt.row.exchangerName }}
                 </div>
                 <div v-if="alt.row.reserve" class="tnum text-[11px] text-ink-faint">
-                  резерв {{ fmtCompact(Number(alt.row.reserve)) }} {{ unit }}
+                  {{ t('alertTriggered.reserve') }} {{ fmtCompact(Number(alt.row.reserve)) }}
+                  {{ unit }}
                 </div>
               </div>
               <span class="tnum flex-none text-[15px] font-bold text-ink"
@@ -217,13 +227,15 @@ function pauseAndBack() {
 
         <!-- actions -->
         <div class="flex gap-2.5">
-          <KButton variant="secondary" block @click="navigateTo('/')">Показать все</KButton>
+          <KButton variant="secondary" block @click="navigateTo('/')">{{
+            t('alertTriggered.showAll')
+          }}</KButton>
           <button
             type="button"
             class="flex-1 rounded-[14px] border border-line-strong bg-surface-raised py-3.5 text-sm font-semibold text-ink-muted transition-colors hover:text-ink"
             @click="pauseAndBack"
           >
-            Приостановить
+            {{ t('alertTriggered.pause') }}
           </button>
         </div>
       </div>

@@ -24,22 +24,24 @@ interface Exchanger {
   pair?: string
 }
 
+const { t } = useI18n()
+
 // Static fallback shown during first render and when the API is unreachable.
-const fallbackExchangers: Exchanger[] = [
+const fallbackExchangers = computed<Exchanger[]>(() => [
   {
     name: 'CryptoBridge',
     initials: 'CB',
     avatarColor: '#3A4452',
     rating: '4.9',
     reviews: '1203',
-    time: '10 мин',
+    time: t('homePage.minutes', { n: 10 }),
     reserve: '24.8M ₽',
     extraTag: 'AML ✓',
     partner: true,
     state: 'best',
     receive: '81 200 ₽',
     rate: '81.20 ₽',
-    delta: 'Лучший курс',
+    delta: t('home.card.bestRate'),
     deltaTone: 'success',
   },
   {
@@ -48,9 +50,9 @@ const fallbackExchangers: Exchanger[] = [
     avatarColor: '#5B3FA0',
     rating: '4.9',
     reviews: '2104',
-    time: '15 мин',
+    time: t('homePage.minutes', { n: 15 }),
     reserve: '31.2M ₽',
-    extraTag: 'без KYC',
+    extraTag: t('homePage.noKyc'),
     state: 'normal',
     receive: '80 950 ₽',
     rate: '80.95 ₽',
@@ -63,7 +65,7 @@ const fallbackExchangers: Exchanger[] = [
     avatarColor: '#1F8A5B',
     rating: '4.7',
     reviews: '560',
-    time: '20 мин',
+    time: t('homePage.minutes', { n: 20 }),
     reserve: '8.4M ₽',
     state: 'normal',
     receive: '80 740 ₽',
@@ -77,23 +79,22 @@ const fallbackExchangers: Exchanger[] = [
     avatarColor: '#8A5A2B',
     rating: '4.4',
     reviews: '310',
-    time: '30 мин',
+    time: t('homePage.minutes', { n: 30 }),
     reserve: '2.1M ₽',
-    note: 'курс устарел',
+    note: t('home.card.stale'),
     state: 'stale',
     receive: '79 100 ₽',
     rate: '79.10 ₽',
     delta: '−2 100 ₽',
     deltaTone: 'muted',
   },
-]
+])
 
 // --- live rates (shared with the calculator via useCalculator), with fallback ---
 // `ranked` is the current direction's exchangers, best-first, already converted
 // at the entered amount — so the top card always matches the calculator's best.
 const { ranked, give, get, getCode, receiveUnit, directionSlug } = useCalculator()
 const { filter, sort } = useHomeFilters()
-const { t } = useI18n()
 const apiBase = useApiBase()
 
 // Apply the FilterBar's filter + sort to the ranked list (real data only).
@@ -158,11 +159,11 @@ const liveExchangers = computed<Exchanger[] | null>(() => {
 })
 
 // null → fallback; [] → live data exists but nothing matches the active filter.
-const displayExchangers = computed(() => liveExchangers.value ?? fallbackExchangers)
+const displayExchangers = computed(() => liveExchangers.value ?? fallbackExchangers.value)
 
 useSeoMeta({
-  title: 'Kurso — курсы криптообменников',
-  description: 'Сравните курсы обмена USDT, BTC и других валют у проверенных обменников.',
+  title: () => t('homePage.seoTitle'),
+  description: () => t('homePage.seoDescription'),
 })
 </script>
 

@@ -128,7 +128,7 @@ const btnVariant = computed(() => (props.state === 'best' ? 'primary' : 'seconda
             <button
               v-if="slug"
               type="button"
-              :aria-label="favorited ? 'Убрать из избранного' : 'В избранное'"
+              :aria-label="favorited ? t('homeCard.removeFav') : t('homeCard.addFav')"
               class="ml-0.5 transition-colors"
               :class="favorited ? 'text-danger' : 'text-ink-ghost hover:text-danger'"
               @click="onFav"
@@ -202,7 +202,7 @@ const btnVariant = computed(() => (props.state === 'best' ? 'primary' : 'seconda
             <button
               v-if="slug"
               type="button"
-              :aria-label="favorited ? 'Убрать из избранного' : 'В избранное'"
+              :aria-label="favorited ? t('homeCard.removeFav') : t('homeCard.addFav')"
               class="ml-auto transition-colors"
               :class="favorited ? 'text-danger' : 'text-ink-ghost'"
               @click="onFav"

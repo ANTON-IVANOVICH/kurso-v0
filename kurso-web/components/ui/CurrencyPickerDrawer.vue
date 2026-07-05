@@ -4,6 +4,7 @@ import { computed, ref, watch } from 'vue'
 // Bottom sheet for choosing the buy/sell currency. Slides up over a dimmed
 // backdrop; on desktop it stays centred and width-capped. Wired to the global
 // currency-picker state so any selector opens the same drawer.
+const { t } = useI18n()
 const { open, side, give, get, currencyOptions, choose, close } = useCurrencyPicker()
 useScrollLock(open)
 
@@ -96,7 +97,7 @@ watch(open, (v) => {
             <span class="h-[5px] w-10 rounded-full bg-line-strong" />
           </div>
           <div class="mb-3 text-center text-sm font-semibold text-ink-muted">
-            {{ side === 'give' ? 'Отдаю' : 'Получаю' }}
+            {{ side === 'give' ? t('currencyPicker.give') : t('currencyPicker.get') }}
           </div>
         </div>
 
@@ -121,7 +122,7 @@ watch(open, (v) => {
             <input
               v-model="query"
               type="text"
-              placeholder="Поиск валюты или банка"
+              :placeholder="t('currencyPicker.searchPlaceholder')"
               class="w-full bg-transparent text-sm text-ink placeholder:text-ink-faint focus:outline-none"
             />
           </label>
@@ -165,7 +166,9 @@ watch(open, (v) => {
               </svg>
             </button>
           </div>
-          <div v-else class="py-10 text-center text-sm text-ink-faint">Ничего не найдено</div>
+          <div v-else class="py-10 text-center text-sm text-ink-faint">
+            {{ t('currencyPicker.noResults') }}
+          </div>
         </div>
       </div>
     </div>
